@@ -9,18 +9,21 @@ const TYPE_ORDER=['normal','fire','water','electric','grass','ice','fighting','p
 const PHYSICAL=new Set(['normal','fighting','flying','poison','ground','rock','bug','ghost']);
 const GEN1_MOVE_TYPE_OVERRIDES={bite:'normal',gust:'normal','karate-chop':'normal','sand-attack':'ground','razor-wind':'normal',struggle:'normal'};
 const TYPE_CHART={
- normal:{rock:.5,ghost:0},fire:{fire:.5,water:.5,grass:2,ice:2,bug:2,rock:.5,dragon:.5},water:{fire:2,water:.5,grass:.5,ground:2,rock:2,dragon:.5},electric:{water:2,electric:.5,grass:.5,ground:0,flying:2,dragon:.5},grass:{fire:.5,water:2,grass:.5,poison:.5,ground:2,flying:.5,bug:.5,rock:2,dragon:.5},ice:{fire:.5,water:.5,grass:2,ice:.5,ground:2,flying:2,dragon:2},fighting:{normal:2,poison:.5,flying:.5,psychic:.5,bug:.5,rock:2,ghost:0},poison:{grass:2,poison:.5,ground:.5,bug:2,rock:.5,ghost:.5},ground:{fire:2,electric:2,grass:.5,poison:2,flying:0,bug:.5,rock:2},flying:{electric:.5,grass:2,fighting:2,bug:2,rock:.5},psychic:{fighting:2,poison:2,psychic:.5,bug:2,ghost:2},bug:{fire:.5,grass:2,fighting:.5,poison:.5,flying:.5,psychic:2,ghost:.5},rock:{normal:.5,fire:2,ice:2,fighting:.5,ground:.5,flying:2,bug:2},ghost:{normal:0,psychic:2,ghost:2},dragon:{dragon:2}
+ normal:{rock:.5,ghost:0},fire:{fire:.5,water:.5,grass:2,ice:2,bug:2,rock:.5,dragon:.5},water:{fire:2,water:.5,grass:.5,ground:2,rock:2,dragon:.5},electric:{water:2,electric:.5,grass:.5,ground:0,flying:2,dragon:.5},grass:{fire:.5,water:2,grass:.5,poison:.5,ground:2,flying:.5,bug:.5,rock:2,dragon:.5},ice:{fire:1,water:.5,grass:2,ice:.5,ground:2,flying:2,dragon:2},fighting:{normal:2,poison:.5,flying:.5,psychic:.5,bug:.5,rock:2,ghost:0},poison:{grass:2,poison:.5,ground:.5,bug:2,rock:.5,ghost:.5},ground:{fire:2,electric:2,grass:.5,poison:2,flying:0,bug:.5,rock:2},flying:{electric:.5,grass:2,fighting:2,bug:2,rock:.5},psychic:{fighting:2,poison:2,psychic:.5,bug:2,ghost:2},bug:{fire:.5,grass:2,fighting:.5,poison:2,flying:.5,psychic:2,ghost:.5},rock:{normal:.5,fire:2,ice:2,fighting:.5,ground:.5,flying:2,bug:2},ghost:{normal:0,psychic:2,ghost:2},dragon:{dragon:2}
 };
 const STATUS_MOVES={
- thunderwave:{status:'par',chance:100},stunspore:{status:'par',chance:75},glare:{status:'par',chance:75},poisonpowder:{status:'poison',chance:75},toxic:{status:'toxic',chance:85},'poison-sting':{status:'poison',chance:30},poison:{status:'poison',chance:100},
- sleeppowder:{status:'sleep',chance:75},hypnosis:{status:'sleep',chance:60},sing:{status:'sleep',chance:55},lovelykiss:{status:'sleep',chance:75},spore:{status:'sleep',chance:100},darkvoid:{status:'sleep',chance:80},
- 'confuse-ray':{status:'confusion',chance:100},supersonic:{status:'confusion',chance:55},'psybeam':{status:'confusion',chance:10},'water-pulse':{status:'confusion',chance:20},
- recover:{heal:50},softboiled:{heal:50},rest:{heal:100,status:'sleep'},absorb:{drain:.5},megadrain:{drain:.5},gigadrain:{drain:.5},leechlife:{drain:.5},'dream-eater':{drain:.5},
- swordsdance:{boost:'atk',amount:2},growth:{boost:'spc',amount:1},amnesia:{boost:'spc',amount:2},agility:{boost:'spe',amount:2},harden:{boost:'def',amount:1},withdraw:{boost:'def',amount:1},'defense-curl':{boost:'def',amount:1},meditate:{boost:'atk',amount:1},sharpen:{boost:'atk',amount:1},acidarmor:{boost:'def',amount:2},barrier:{boost:'def',amount:2},
- leer:{boost:'foeDef',amount:-1},tailwhip:{boost:'foeDef',amount:-1},growl:{boost:'foeAtk',amount:-1},'string-shot':{boost:'foeSpe',amount:-1},'sand-attack':{boost:'foeAcc',amount:-1},smokescreen:{boost:'foeAcc',amount:-1},kinesis:{boost:'foeAcc',amount:-1},flash:{boost:'foeAcc',amount:-1},screech:{boost:'foeDef',amount:-2},'swords-dance':{boost:'atk',amount:2},'double-team':{boost:'evasion',amount:1},minimize:{boost:'evasion',amount:1},smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'sludge-bomb':{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},'thunder':{status:'par',chance:10},'thunderbolt':{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},fireblast:{status:'burn',chance:30},'ember':{status:'burn',chance:10},'rock-slide':{flinch:30},'waterfall':{flinch:20},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.33},'submission':{recoil:.25},'struggle':{recoil:.25}
+ 'thunder-wave':{status:'par',chance:100},'stun-spore':{status:'par',chance:100},glare:{status:'par',chance:100},'poison-powder':{status:'poison',chance:100},toxic:{status:'toxic',chance:100},'poison-sting':{status:'poison',chance:30},
+ 'sleep-powder':{status:'sleep',chance:100},hypnosis:{status:'sleep',chance:100},sing:{status:'sleep',chance:100},'lovely-kiss':{status:'sleep',chance:100},spore:{status:'sleep',chance:100},
+ 'confuse-ray':{status:'confusion',chance:100},supersonic:{status:'confusion',chance:100},'psybeam':{status:'confusion',chance:10},'water-pulse':{status:'confusion',chance:20},
+ recover:{heal:50},'soft-boiled':{heal:50},rest:{heal:100,status:'sleep'},
+ 'swords-dance':{boost:'atk',amount:2},growth:{boost:'spc',amount:1},amnesia:{boost:'spc',amount:2},agility:{boost:'spe',amount:2},harden:{boost:'def',amount:1},withdraw:{boost:'def',amount:1},'defense-curl':{boost:'def',amount:1},meditate:{boost:'atk',amount:1},sharpen:{boost:'atk',amount:1},'acid-armor':{boost:'def',amount:2},barrier:{boost:'def',amount:2},
+ leer:{boost:'foeDef',amount:-1},'tail-whip':{boost:'foeDef',amount:-1},growl:{boost:'foeAtk',amount:-1},'string-shot':{boost:'foeSpe',amount:-1},'sand-attack':{boost:'foeAcc',amount:-1},'smoke-screen':{boost:'foeAcc',amount:-1},kinesis:{boost:'foeAcc',amount:-1},flash:{boost:'foeAcc',amount:-1},screech:{boost:'foeDef',amount:-2},'double-team':{boost:'evasion',amount:1},minimize:{boost:'evasion',amount:1},
+ smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},thunder:{status:'par',chance:10},thunderbolt:{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},'fire-blast':{status:'burn',chance:30},ember:{status:'burn',chance:10},'rock-slide':{flinch:30},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.33},'submission':{recoil:.25},'struggle':{recoil:.25},
+ 'leech-seed':{volatile:'leech-seed'},substitute:{volatile:'substitute'},reflect:{volatile:'reflect'},'light-screen':{volatile:'light-screen'},haze:{volatile:'haze'},disable:{volatile:'disable'},counter:{special:'counter'},bide:{special:'bide'},'rage':{volatile:'rage'},'focus-energy':{volatile:'focus-energy'},'mist':{volatile:'mist'},'roar':{forceSwitch:true},whirlwind:{forceSwitch:true},'self-destruct':{selfdestruct:true},explosion:{selfdestruct:true},'hyper-beam':{recharge:true},'fire-spin':{volatile:'trap'},'wrap':{volatile:'trap'},bind:{volatile:'trap'},clamp:{volatile:'trap'},'vice-grip':{volatile:'trap'},'razor-wind':{charge:true},dig:{charge:true},fly:{charge:true},'solar-beam':{charge:true},'skull-bash':{charge:true},'ice-beam':{status:'freeze',chance:10}
 };
+
 const RECOIL_MOVES=new Set(['take-down','double-edge','submission','high-jump-kick','jump-kick','struggle']);
-const S={page:'home',ready:false,error:null,dex:null,gen:null,mons:[],byId:new Map(),selected:null,team:[],moves:new Map(),search:'',type:'',sort:'id',battle:null,online:null};
+const S={page:'home',ready:false,error:null,dex:null,gen:null,mons:[],byId:new Map(),selected:null,team:[],moves:new Map(),movePool:new Map(),search:'',type:'',sort:'id',battle:null,online:null};
 const app=document.querySelector('#app');
 const cap=s=>String(s).split('-').map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' ');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -32,6 +35,16 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const randomInt=n=>Math.floor(Math.random()*n);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+async function validateGen1(){
+ const types=Array.from(S.gen.types||[]).map(t=>String(t.id||t.name||'').toLowerCase()).filter(Boolean);
+ if(types.length!==15)throw Error(`Gen I validation failed: expected 15 types, received ${types.length}.`);
+ const moves=Array.from(S.gen.moves||[]);if(moves.length!==165)throw Error(`Gen I validation failed: expected 165 moves, received ${moves.length}.`);
+ const required=[["normal","ghost",0],["ghost","normal",0],["fighting","ghost",0],["ghost","psychic",2],["psychic","ghost",2],["electric","ground",0],["ground","flying",0]];
+ for(const [a,b,v] of required)if(effect(a,b)!==v)throw Error(`Type chart validation failed: ${a} -> ${b}.`);
+ for(const mon of S.mons){const ls=await learnset(mon);if(ls.length<4)throw Error(`${mon.displayName} has fewer than four legal Gen I moves.`);}
+ return true;
+}
+
 async function loadData(){
  try{
   if(!window.pkmn?.dex?.Dex||!window.pkmn?.data?.Generations)throw Error('Gen I data library failed to load. Refresh once if this happens.');
@@ -40,47 +53,237 @@ async function loadData(){
   for(const sp of S.gen.species){if(!sp.num||sp.num>151||sp.isNonstandard)continue;arr.push({id:sp.num,name:sp.name.toLowerCase(),displayName:sp.name,types:sp.types.map(x=>x.toLowerCase()),baseStats:{hp:sp.baseStats.hp,atk:sp.baseStats.atk,def:sp.baseStats.def,spe:sp.baseStats.spe,spc:sp.baseStats.spc},sprite:SPRITE(sp.num),art:ART(sp.num),species:sp});}
   arr.sort((a,b)=>a.id-b.id);S.mons=arr;arr.forEach(m=>S.byId.set(m.id,m));
   if(arr.length!==151)throw Error(`Expected 151 Gen I Pokémon, received ${arr.length}.`);
+  await validateGen1();
   S.ready=true;render();
  }catch(e){S.error=e;render();}
 }
 async function learnset(mon){
- if(mon.learned)return mon.learned;const out=[];
- for await(const item of S.gen.learnsets.all(mon.species)){if(item.learnset)for(const [moveId] of Object.entries(item.learnset))out.push(moveId);}
- mon.learned=[...new Set(out)].filter(id=>S.gen.moves.get(id)?.exists!==false).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));return mon.learned;
+ if(mon.learned)return mon.learned;
+ // Build the Gen I legal move list from the generation-aware Learnsets API.
+ // This avoids accidentally dropping TM/HM/level-1 moves when iterating raw
+ // learnset records. @pkmn/data documents canLearn() as the legality check.
+ const out=[];
+ for(const mv of S.gen.moves){
+   const id=mv.id||String(mv.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+   if(!id)continue;
+   try{
+     if(await S.gen.learnsets.canLearn(mon.species,id))out.push(id);
+   }catch{}
+ }
+ mon.learned=[...new Set(out)].sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
+ return mon.learned;
 }
-function moveData(id){const m=S.gen.moves.get(id);if(!m||m.exists===false)return null;const type=GEN1_MOVE_TYPE_OVERRIDES[id]||(m.type||'Normal').toLowerCase();return{id,name:id,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1};}
+function moveData(id){const m=S.gen.moves.get(id);if(!m||m.exists===false)return null;const type=GEN1_MOVE_TYPE_OVERRIDES[id]||(m.type||'Normal').toLowerCase();const secondary=m.secondary||null;return{id,name:id,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1,priority:m.priority||0,multihit:m.multihit||null,drain:m.drain||0,recoil:m.recoil||0,ohko:!!m.ohko,damage:m.damage||null,status:m.status||null,volatileStatus:m.volatileStatus||null,boosts:m.boosts||null,flinch:m.flinch||0,secondary};}
 function maxStats(mon){const bs=mon.baseStats,dv=15,exp=65535,bonus=Math.floor(Math.sqrt(exp)/4);return{hp:Math.floor((((bs.hp+dv)*2+bonus)*LEVEL)/100)+LEVEL+10,atk:Math.floor((((bs.atk+dv)*2+bonus)*LEVEL)/100)+5,def:Math.floor((((bs.def+dv)*2+bonus)*LEVEL)/100)+5,spe:Math.floor((((bs.spe+dv)*2+bonus)*LEVEL)/100)+5,spc:Math.floor((((bs.spc+dv)*2+bonus)*LEVEL)/100)+5};}
 function legalMoves(mon){return[...(mon.learned||[])].map(moveData).filter(Boolean);}
-async function ensureMoves(mon){const list=await learnset(mon);if(!S.moves.has(mon.id)&&list.length>=4)S.moves.set(mon.id,list.slice(0,4));}
+async function ensureMoves(mon){
+  const list=await learnset(mon);
+  const data=list.map(moveData).filter(Boolean);
+  S.movePool.set(mon.id,data);
+  return data;
+}
+const RECOMMENDED={
+  // Representative RBY OU sets. Every entry is still checked against the
+  // actual Red/Blue learnset before it can be used.
+  3:['razor-leaf','sleep-powder','growth','leech-seed'],
+  6:['fire-blast','slash','swords-dance','body-slam'],
+  9:['surf','blizzard','rest','withdraw'],
+  25:['thunderbolt','thunder-wave','substitute','thunder'],
+  26:['thunderbolt','thunder-wave','reflect','rest'],
+  31:['earthquake','blizzard','thunder','body-slam'],
+  34:['earthquake','thunderbolt','rock-slide','body-slam'],
+  35:['sing','thunder-wave','psychic','ice-beam'],
+  36:['psychic','thunder-wave','reflect','ice-beam'],
+  38:['fire-blast','body-slam','rest','substitute'],
+  53:['slash','psychic','body-slam','substitute'],
+  55:['surf','psychic','ice-beam','rest'],
+  59:['fire-blast','body-slam','rest','reflect'],
+  65:['psychic','thunder-wave','recover','reflect'],
+  68:['submission','earthquake','rock-slide','body-slam'],
+  76:['earthquake','rock-slide','body-slam','rest'],
+  80:['surf','psychic','amnesia','rest'],
+  82:['thunderbolt','thunder-wave','reflect','rest'],
+  89:['sludge','toxic','earthquake','explosion'],
+  91:['blizzard','clamp','surf','explosion'],
+  94:['hypnosis','psychic','thunderbolt','night-shade'],
+  97:['hypnosis','psychic','thunder-wave','rest'],
+  101:['thunderbolt','thunder-wave','explosion','reflect'],
+  103:['psychic','sleep-powder','stun-spore','explosion'],
+  105:['earthquake','rock-slide','body-slam','rest'],
+  112:['earthquake','rock-slide','body-slam','substitute'],
+  121:['psychic','thunderbolt','recover','thunder-wave'],
+  123:['slash','swords-dance','agility','hyper-beam'],
+  124:['lovely-kiss','psychic','ice-beam','thunderbolt'],
+  125:['thunderbolt','thunder-wave','seismic-toss','reflect'],
+  126:['fire-blast','psychic','submission','body-slam'],
+  127:['slash','swords-dance','body-slam','hyper-beam'],
+  128:['body-slam','earthquake','blizzard','thunderbolt'],
+  130:['surf','blizzard','hyper-beam','body-slam'],
+  131:['surf','blizzard','body-slam','rest'],
+  132:['transform','rest','substitute','toxic'],
+  134:['surf','blizzard','acid-armor','rest'],
+  135:['thunderbolt','thunder-wave','pin-missile','substitute'],
+  136:['fire-blast','body-slam','rest','substitute'],
+  137:['thunderbolt','ice-beam','psychic','recover'],
+  139:['surf','blizzard','ice-beam','rest'],
+  141:['slash','swords-dance','agility','hyper-beam'],
+  142:['rock-slide','hyper-beam','fire-blast','earthquake'],
+  143:['body-slam','earthquake','rest','amnesia'],
+  144:['blizzard','ice-beam','agility','rest'],
+  145:['thunderbolt','drill-peck','thunder-wave','agility'],
+  146:['fire-blast','agility','hyper-beam','body-slam'],
+  147:['agility','thunder-wave','substitute','body-slam'],
+  148:['agility','thunder-wave','hyper-beam','body-slam'],
+  149:['agility','blizzard','thunderbolt','hyper-beam'],
+  150:['psychic','recover','thunder-wave','reflect'],
+  151:['psychic','ice-beam','thunderbolt','transform']
+};
+function scoreRecommended(mon,m){
+  let score=0;
+  if(mon.types.includes(m.type)) score+=22;
+  if(m.power>0) score+=Math.min(28,m.power/4);
+  if(m.accuracy>=95) score+=8; else if(m.accuracy>=90) score+=4; else if(m.accuracy<70) score-=8;
+  if(m.status||m.volatileStatus||m.boosts) score+=8;
+  if(['rest','recover','soft-boiled','self-destruct','explosion','hyper-beam'].includes(m.id))score+=4;
+  if(m.power===0&&!m.status&&!m.volatileStatus&&!m.boosts&&!m.damage)score-=20;
+  return score;
+}
+function recommendedMoves(mon){
+  const pool=S.movePool.get(mon.id)||legalMoves(mon); const byId=new Map(pool.map(m=>[m.id,m]));
+  const picked=[];
+  for(const id of (RECOMMENDED[mon.id]||[])){const m=byId.get(id);if(m&&!picked.some(x=>x.id===m.id))picked.push(m);}
+  const rest=pool.filter(m=>!picked.some(x=>x.id===m.id)).sort((a,b)=>scoreRecommended(mon,b)-scoreRecommended(mon,a));
+  while(picked.length<4&&rest.length)picked.push(rest.shift());
+  return picked.slice(0,4).map(m=>m.id);
+}
 function filtered(){let a=S.mons.filter(m=>{const q=S.search.toLowerCase();return(!q||m.name.includes(q)||String(m.id)===q)&&(!S.type||m.types.includes(S.type));});if(S.sort==='id')a.sort((x,y)=>x.id-y.id);else a.sort((x,y)=>(y.baseStats[S.sort]||0)-(x.baseStats[S.sort]||0));return a;}
 
 function home(){app.innerHTML=`<section class="hero"><div class="brand">GEN I COMPETITIVE ARENA</div><h1>151 Pokémon.<br><span>Your team. Your rival.</span></h1><p class="muted">Build six, choose four Red/Blue-legal moves for each, then battle locally or online. The battle rules intentionally fix the old Ghost/Psychic cartridge bug.</p><div class="row"><button class="btn primary" id="build">BUILD TEAM</button><button class="btn" id="quick">QUICK BATTLE</button></div><div class="notice">Level 50 • Gen I physical/special by move type • 151 Kanto Pokémon • 4 locked-in moves per Pokémon • <b>Ghost → Psychic = 2×</b> and <b>Psychic → Ghost = 2×</b>.</div></section><section class="panel" style="margin-top:12px"><div class="stats"><div class="stat"><b>151</b><span class="muted">Kanto</span></div><div class="stat"><b>165</b><span class="muted">Gen I moves</span></div><div class="stat"><b>6v6</b><span class="muted">teams</span></div><div class="stat"><b>4</b><span class="muted">moves each</span></div><div class="stat"><b>Lv.50</b><span class="muted">battle</span></div></div></section><section class="panel" style="margin-top:12px"><h3>Online casual PvP</h3><p class="muted">Create a private room and share the code. Player actions are written to a separate action queue, so both players cannot overwrite the same turn state.</p><div class="online"><button class="btn primary" id="create">CREATE ROOM</button><button class="btn" id="join">JOIN ROOM</button></div></section>`;}
 function teamPage(){const list=filtered(),p=S.selected?S.byId.get(S.selected):null;app.innerHTML=`<section class="panel"><div class="row"><div><div class="brand">TEAM BUILDER</div><h2 style="margin:.2rem 0">Build your six</h2></div><div class="spacer"></div><span class="pill">${S.team.length}/6 Pokémon</span><button class="btn primary" id="start" ${S.team.length!==6?'disabled':''}>START LOCAL</button><button class="btn" id="create" ${S.team.length!==6?'disabled':''}>CREATE ONLINE ROOM</button></div><div class="team">${S.team.map((id,i)=>{const m=S.byId.get(id);return`<div class="slot"><span>${i+1}</span><img src="${m.sprite}"><b>${esc(m.displayName)}</b><button class="btn" data-remove="${id}">×</button></div>`;}).join('')}</div><div class="controls"><input class="input" id="search" placeholder="Search Pokémon…" value="${esc(S.search)}"><select class="select" id="filter"><option value="">All types</option>${TYPE_ORDER.map(t=>`<option ${S.type===t?'selected':''} value="${t}">${cap(t)}</option>`).join('')}</select><select class="select" id="sort"><option value="id" ${S.sort==='id'?'selected':''}>Pokédex order</option><option value="hp" ${S.sort==='hp'?'selected':''}>HP</option><option value="atk" ${S.sort==='atk'?'selected':''}>Attack</option><option value="def" ${S.sort==='def'?'selected':''}>Defense</option><option value="spc" ${S.sort==='spc'?'selected':''}>Special</option><option value="spe" ${S.sort==='spe'?'selected':''}>Speed</option></select></div><div class="grid">${list.map(m=>`<button class="dex ${S.selected===m.id?'selected':''}" data-pick="${m.id}"><span class="num">#${String(m.id).padStart(3,'0')}</span><img src="${m.sprite}" alt="${esc(m.displayName)}"><b>${esc(m.displayName)}</b><div>${m.types.map(t=>`<span class="tag">${cap(t)}</span>`).join(' / ')}</div></button>`).join('')}</div>${p?detail(p):''}</section>`;}
-function detail(p){const chosen=S.moves.get(p.id)||[],stats=p.baseStats;return`<div class="detail"><div class="portrait"><img src="${p.art}" alt="${esc(p.displayName)}"><strong>#${String(p.id).padStart(3,'0')} ${esc(p.displayName)}</strong><div>${p.types.map(t=>`<span class="pill">${cap(t)}</span>`).join('')}</div><button class="btn primary" id="add" ${S.team.includes(p.id)||S.team.length>=6?'disabled':''}>${S.team.includes(p.id)?'IN TEAM':'ADD TO TEAM'}</button></div><div><div class="stats"><div class="stat"><b>${stats.hp}</b><span class="muted">HP</span></div><div class="stat"><b>${stats.atk}</b><span class="muted">ATK</span></div><div class="stat"><b>${stats.def}</b><span class="muted">DEF</span></div><div class="stat"><b>${stats.spc}</b><span class="muted">SPC</span></div><div class="stat"><b>${stats.spe}</b><span class="muted">SPE</span></div></div><h3>Red/Blue legal moves <span class="muted small">(${chosen.length}/4 selected)</span></h3><div class="moves">${legalMoves(p).map(m=>`<div class="move ${chosen.includes(m.id)?'selected':''}" data-move="${m.id}" data-mon="${p.id}"><b>${moveLabel(m.id)}</b><div class="small muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${m.pp} PP</div></div>`).join('')}</div></div></div>`;}
+function detail(p){const chosen=S.moves.get(p.id)||[],stats=p.baseStats;return`<div class="detail"><div class="portrait"><img src="${p.art}" alt="${esc(p.displayName)}"><strong>#${String(p.id).padStart(3,'0')} ${esc(p.displayName)}</strong><div>${p.types.map(t=>`<span class="pill">${cap(t)}</span>`).join('')}</div><button class="btn primary" id="add" ${S.team.includes(p.id)||S.team.length>=6?'disabled':''}>${S.team.includes(p.id)?'IN TEAM':'ADD TO TEAM'}</button></div><div><div class="stats"><div class="stat"><b>${stats.hp}</b><span class="muted">HP</span></div><div class="stat"><b>${stats.atk}</b><span class="muted">ATK</span></div><div class="stat"><b>${stats.def}</b><span class="muted">DEF</span></div><div class="stat"><b>${stats.spc}</b><span class="muted">SPC</span></div><div class="stat"><b>${stats.spe}</b><span class="muted">SPE</span></div></div><h3>Red/Blue legal moves <span class="muted small">(${chosen.length}/4 selected)</span></h3><div class="notice small">The highlighted four are recommended legal Gen I moves. You can replace any of them with another move this Pokémon could actually learn in Red/Blue.</div><div class="moves">${legalMoves(p).map(m=>`<div class="move ${chosen.includes(m.id)?'selected':''}" data-move="${m.id}" data-mon="${p.id}"><b>${moveLabel(m.id)}</b><div class="small muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${m.pp} PP</div></div>`).join('')}</div></div></div>`;}
 
-function buildMon(mon,chosen){const st=maxStats(mon),ids=chosen.slice(0,4);return{id:mon.id,name:mon.name,displayName:mon.displayName,types:mon.types,max:st,hp:st.hp,status:null,statusTurns:0,boosts:{atk:0,def:0,spe:0,spc:0,acc:0,evasion:0},moves:ids.map(moveData).filter(Boolean),pp:Object.fromEntries(ids.map(x=>[x,moveData(x)?.pp||1]))};}
+function buildMon(mon,chosen){
+ const st=maxStats(mon);
+ const ids=[...new Set(chosen)].slice(0,4);
+ const moves=ids.map(moveData).filter(Boolean);
+ return{id:mon.id,name:mon.name,displayName:mon.displayName,types:mon.types,baseSpeed:mon.baseStats.spe,max:st,hp:st.hp,status:null,statusTurns:0,boosts:{atk:0,def:0,spe:0,spc:0,acc:0,evasion:0},toxicCounter:0,volatile:{},leechSeed:null,moves,pp:Object.fromEntries(moves.map(x=>[x.id,x.pp]))};
+}
 function cloneTeam(team){return team.map(x=>({...x,max:{...x.max},boosts:{...x.boosts},moves:x.moves.map(m=>({...m})),pp:{...x.pp}}));}
-function effectiveStat(mon,key){const raw=mon.max[key]||0;return raw*stage(mon.boosts[key]||0);}
-function accuracyMultiplier(mon){return stage(mon.boosts.acc||0);}
-function applyStatus(mon,status){if(mon.status&&status!=='confusion')return false;if(['poison','toxic'].includes(status)&&mon.types.includes('poison'))return false;if(status==='par'&&mon.types.includes('electric'))return false;if(status==='burn'&&mon.types.includes('fire'))return false;if(status==='freeze'&&mon.types.includes('ice'))return false;if(status==='sleep'){mon.status='sleep';mon.statusTurns=2+randomInt(3);}else if(status==='confusion'){mon.status='confusion';mon.statusTurns=2+randomInt(3);}else mon.status=status;return true;}
-function damage(att,def,mv){const e=typeMult(mv,def);if(e===0||!mv.power)return{dmg:0,e,crit:false};const atkKey=PHYSICAL.has(mv.type)?'atk':'spc',defKey=PHYSICAL.has(mv.type)?'def':'spc';let A=Math.floor(effectiveStat(att,atkKey)),D=Math.max(1,Math.floor(effectiveStat(def,defKey)));let crit=Math.random()<.0625;if(STATUS_MOVES[mv.id]?.crit)crit=true;if(crit){A=Math.floor(att.max[atkKey]);D=Math.max(1,Math.floor(def.max[defKey]));}let x=Math.floor(Math.floor(2*LEVEL/5+2)*mv.power*A/D/50)+2;const stab=att.types.includes(mv.type)?1.5:1;const rand=(217+randomInt(39))/255;let dmg=Math.floor(x*stab*e*rand);if(dmg<1&&e>0)dmg=1;return{dmg,e,crit};}
-function canAct(mon,log){if(mon.status==='sleep'){if(mon.statusTurns>0){mon.statusTurns--;log(`${mon.displayName} is asleep.`);return false;}mon.status=null;log(`${mon.displayName} woke up!`);}if(mon.status==='par'&&Math.random()<.25){log(`${mon.displayName} is fully paralyzed.`);return false;}if(mon.status==='freeze'){if(Math.random()<.2){mon.status=null;log(`${mon.displayName} thawed out!`);}else{log(`${mon.displayName} is frozen solid.`);return false;}}if(mon.status==='confusion'){if(mon.statusTurns>0){mon.statusTurns--;if(Math.random()<.5){const self=Math.max(1,Math.floor((Math.floor(2*LEVEL/5+2)*40*effectiveStat(mon,'atk')/Math.max(1,effectiveStat(mon,'def'))/50)+2));mon.hp=Math.max(0,mon.hp-self);log(`${mon.displayName} hurt itself in confusion!`);return false;}}else{mon.status=null;log(`${mon.displayName} snapped out of confusion!`);}}return true;}
-function endTurn(mon,log){if(mon.status==='poison'||mon.status==='toxic'){const d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);log(`${mon.displayName} took ${d} poison damage.`);}}
-function resolveMove(att,def,mv,log){if(!mv||!canAct(att,log))return;if(att.pp[mv.id]<=0){log(`${moveLabel(mv.id)} has no PP!`);return;}att.pp[mv.id]--;const acc=clamp(mv.accuracy*accuracyMultiplier(att),1,100);if(Math.random()*100>=acc){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return;}const spec=STATUS_MOVES[mv.id];if(spec?.status&&Math.random()*100<=(spec.chance??100)){if(applyStatus(def,spec.status))log(`${def.displayName} is ${spec.status==='par'?'paralyzed':spec.status==='sleep'?'asleep':spec.status==='confusion'?'confused':spec.status==='freeze'?'frozen':spec.status==='burn'?'burned':spec.status==='toxic'?'badly poisoned':'poisoned'}!`);}if(spec?.boost){const target=spec.boost.startsWith('foe')?def:att;const key=spec.boost.replace('foe','');if(key==='special'||key==='spc')target.boosts.spc=clamp(target.boosts.spc+spec.amount,-6,6);else if(key==='acc'||key==='evasion')target.boosts[key]=clamp(target.boosts[key]+spec.amount,-6,6);else target.boosts[key]=clamp(target.boosts[key]+spec.amount,-6,6);log(`${att.displayName} used ${moveLabel(mv.id)}.`);}if(spec?.heal){const healed=Math.min(att.max.hp-att.hp,Math.floor(att.max.hp*(spec.heal/100)));att.hp+=healed;log(`${att.displayName} recovered ${healed} HP.`);}if(mv.id==='rest'&&att.hp>0){att.hp=att.max.hp;att.status='sleep';att.statusTurns=2+randomInt(3);log(`${att.displayName} went to sleep and fully healed.`);}if(mv.power){const r=damage(att,def,mv);def.hp=Math.max(0,def.hp-r.dmg);let msg=`${att.displayName} used ${moveLabel(mv.id)} — ${r.dmg} damage.`;if(r.crit)msg+=' CRITICAL!';if(r.e===0)msg+=' NO EFFECT!';else if(r.e>1)msg+=' SUPER EFFECTIVE!';else if(r.e<1)msg+=' NOT VERY EFFECTIVE.';log(msg);if(spec?.drain&&r.dmg)att.hp=Math.min(att.max.hp,att.hp+Math.floor(r.dmg*spec.drain));if(spec?.recoil&&r.dmg)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(r.dmg*spec.recoil)));}}
+function effectiveStat(mon,key){let raw=mon.max[key]||0;if(key==='atk'&&mon.status==='burn')raw=Math.floor(raw/2);if(key==='spe'&&mon.status==='par')raw=Math.floor(raw/4);return Math.max(1,Math.floor(raw*stage(mon.boosts[key]||0)));}
+function accuracyMultiplier(att,def){const a=stage(att.boosts.acc||0);const e=stage(def.boosts.evasion||0);return a/e;}
+function onSwitchOut(mon){mon.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};if(mon.status==='confusion')mon.status=null;mon.statusTurns=0;mon.toxicCounter=mon.status==='toxic'?1:0;mon.volatile={};mon.leechSeed=null;}
+function onSwitchIn(mon){mon.volatile=mon.volatile||{};}
+
+function applyStatus(mon,status){if(mon.status&&status!=='confusion')return false;if(['poison','toxic'].includes(status)&&mon.types.includes('poison'))return false;if(status==='par'&&mon.types.includes('electric'))return false;if(status==='burn'&&mon.types.includes('fire'))return false;if(status==='freeze'&&mon.types.includes('ice'))return false;if(status==='sleep'){mon.status='sleep';mon.statusTurns=2+randomInt(3);}else if(status==='confusion'){mon.status='confusion';mon.statusTurns=2+randomInt(3);}else mon.status=status;if(status==='toxic')mon.toxicCounter=1;return true;}
+function critThreshold(att,mv){
+  const base=Math.max(1,Number(att.baseSpeed)||1);
+  // RBY uses Base Speed, not current Speed. High-crit moves use an 8x rate.
+  const high=!!STATUS_MOVES[mv.id]?.crit;
+  return Math.min(255, high ? base*4 : Math.floor(base/2));
+}
+function rollRby256(threshold){return randomInt(256)<Math.max(0,Math.min(255,threshold));}
+function damage(att,def,mv){
+  const e=typeMult(mv,def);
+  if(e===0||!mv.power)return{dmg:0,e,crit:false};
+  const physical=PHYSICAL.has(mv.type), atkKey=physical?'atk':'spc', defKey=physical?'def':'spc';
+  const crit=rollRby256(critThreshold(att,mv));
+  // In RBY critical hits ignore all stat stages, burn's Attack penalty,
+  // Reflect/Light Screen, and use double level in the damage formula.
+  const level=crit?Math.min(100,LEVEL*2):LEVEL;
+  let A=crit?att.max[atkKey]:effectiveStat(att,atkKey);
+  let D=crit?def.max[defKey]:Math.max(1,effectiveStat(def,defKey));
+  if(!crit && (mv.id==='self-destruct'||mv.id==='explosion'))D=Math.max(1,Math.floor(D/2));
+  // RBY Reflect/Light Screen halve the corresponding damage, and crits ignore them.
+  const screen=!crit && (physical?def.volatile?.reflect:def.volatile?.lightScreen);
+  let base=Math.floor(Math.floor(Math.floor((2*level/5+2)*mv.power*A/D)/50)+2);
+  if(screen)base=Math.floor(base/2);
+  const stab=att.types.includes(mv.type)?1.5:1;
+  const rand=(217+randomInt(39))/255;
+  let dmg=Math.floor(base*stab*e*rand);
+  if(dmg<1&&e>0)dmg=1;
+  return{dmg,e,crit};
+}
+function canAct(mon,log){if(mon.volatile?.recharge){mon.volatile.recharge=false;log(`${mon.displayName} must recharge.`);return false;}if(mon.volatile?.flinch){mon.volatile.flinch=false;log(`${mon.displayName} flinched.`);return false;}if(mon.status==='sleep'){if(mon.statusTurns>0){mon.statusTurns--;log(`${mon.displayName} is asleep.`);return false;}mon.status=null;log(`${mon.displayName} woke up!`);}if(mon.status==='par'&&Math.random()<.25){log(`${mon.displayName} is fully paralyzed.`);return false;}if(mon.status==='freeze'){if(Math.random()<.2){mon.status=null;log(`${mon.displayName} thawed out!`);}else{log(`${mon.displayName} is frozen solid.`);return false;}}if(mon.status==='confusion'){if(mon.statusTurns>0){mon.statusTurns--;if(Math.random()<.5){const self=Math.max(1,Math.floor((Math.floor(2*LEVEL/5+2)*40*effectiveStat(mon,'atk')/Math.max(1,effectiveStat(mon,'def'))/50)+2));mon.hp=Math.max(0,mon.hp-self);log(`${mon.displayName} hurt itself in confusion!`);return false;}}else{mon.status=null;log(`${mon.displayName} snapped out of confusion!`);}}return true;}
+function endTurn(mon,log){if(mon.status==='poison'){const d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);log(`${mon.displayName} took ${d} poison damage.`);}else if(mon.status==='toxic'){const d=Math.max(1,Math.floor(mon.max.hp/16))*Math.max(1,mon.toxicCounter||1);mon.hp=Math.max(0,mon.hp-d);mon.toxicCounter=(mon.toxicCounter||1)+1;log(`${mon.displayName} took ${d} toxic damage.`);}if(mon.leechSeed&&mon.hp>0){const d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);if(mon.leechSeed.hp>0)mon.leechSeed.hp=Math.min(mon.leechSeed.max.hp,mon.leechSeed.hp+d);log(`${mon.displayName} lost ${d} HP to Leech Seed.`);}}
+function resolveMove(att,def,mv,log){
+ if(!mv||att.hp<=0)return {used:false,damage:0};
+ if(!canAct(att,log))return {used:false,damage:0};
+ if(att.pp[mv.id]<=0){log(`${moveLabel(mv.id)} has no PP!`);return {used:false,damage:0};}
+ att.pp[mv.id]--;
+ const spec=STATUS_MOVES[mv.id]||{};
+ if(!mv.ohko){const acc=clamp(mv.accuracy*accuracyMultiplier(att,def),1,100);const hitThreshold=Math.min(255,Math.floor(acc*256/100));if(mv.id!=='swift'&&randomInt(256)>=hitThreshold){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return {used:true,damage:0,miss:true};}}
+
+ const secondaryList=Array.isArray(mv.secondary)?mv.secondary:(mv.secondary?[mv.secondary]:[]);
+ if(spec.status&&Math.random()*100<=(spec.chance??100)){if(applyStatus(def,spec.status))log(`${def.displayName} is ${spec.status==='par'?'paralyzed':spec.status==='sleep'?'asleep':spec.status==='confusion'?'confused':spec.status==='freeze'?'frozen':spec.status==='burn'?'burned':spec.status==='toxic'?'badly poisoned':'poisoned'}!`);}
+ for(const sec of secondaryList){if(!sec)continue;const chance=sec.chance??100;if(Math.random()*100>chance)continue;if(sec.status&&applyStatus(def,sec.status))log(`${def.displayName} was afflicted with ${sec.status}.`);if(sec.volatileStatus==='flinch'&&def.hp>0)def.volatile.flinch=true;if(sec.boosts){for(const [key,val] of Object.entries(sec.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}}
+ if(mv.boosts){for(const [key,val] of Object.entries(mv.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}
+ if(spec.boost){const target=spec.boost.startsWith('foe')?def:att;const key=spec.boost.replace('foe','');target.boosts[key]=clamp((target.boosts[key]||0)+spec.amount,-6,6);log(`${att.displayName}'s ${key} ${spec.amount>0?'rose':'fell'}.`);}
+ if(spec.heal){const healed=Math.min(att.max.hp-att.hp,Math.floor(att.max.hp*(spec.heal/100)));if(healed>0){att.hp+=healed;log(`${att.displayName} recovered ${healed} HP.`);}}
+ if(mv.id==='rest'&&att.hp>0){att.hp=att.max.hp;att.status='sleep';att.statusTurns=2+randomInt(3);log(`${att.displayName} fully healed and fell asleep.`);}
+ if(spec.volatile==='haze'){att.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};def.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};log('All stat changes were reset.');}
+ if(spec.volatile==='leech-seed'){if(!['grass'].some(t=>def.types.includes(t))){def.leechSeed=att;log(`${def.displayName} was seeded.`);}}
+ if(spec.volatile==='substitute'){const cost=Math.floor(att.max.hp/4);if(att.hp>cost){att.hp-=cost;att.volatile.substitute=Math.max(1,Math.floor(att.max.hp/4));log(`${att.displayName} created a Substitute.`);}else log(`${att.displayName} could not make a Substitute.`);}
+ if(spec.volatile==='reflect')att.volatile.reflect=5;
+ if(spec.volatile==='light-screen')att.volatile.lightScreen=5;
+ if(spec.volatile==='focus-energy')att.volatile.focusEnergy=true;
+ if(spec.volatile==='mist')att.volatile.mist=true;
+ if(spec.selfdestruct){att.hp=0;log(`${att.displayName} fainted from the explosion.`);return {used:true,damage:0};}
+ if(spec.forceSwitch){log(`${att.displayName} used ${moveLabel(mv.id)}.`);return {used:true,forceSwitch:true,damage:0};}
+ if(spec.recharge)att.volatile.recharge=true;
+ if(mv.ohko){const hitChance=clamp(30+LEVEL-LEVEL,1,100);if(Math.random()*100<hitChance){def.hp=0;log(`${att.displayName} used ${moveLabel(mv.id)} — OHKO!`);}else log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return {used:true,damage:0};}
+ if(mv.damage){const fixed=mv.damage==='level'?LEVEL:Number(mv.damage);if(Number.isFinite(fixed)&&fixed>0){const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage with ${moveLabel(mv.id)}.`);return {used:true,damage:dealt};}}
+ if(mv.id==='dragon-rage'||mv.id==='sonic-boom'){const fixed=mv.id==='dragon-rage'?40:20;const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return {used:true,damage:dealt};}
+ if(mv.id==='seismic-toss'||mv.id==='night-shade'){const dealt=Math.min(def.hp,LEVEL);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return {used:true,damage:dealt};}
+ if(mv.id==='super-fang'){const dealt=Math.min(def.hp,Math.max(1,Math.floor(def.hp/2)));def.hp-=dealt;log(`${att.displayName} used Super Fang for ${dealt} damage.`);return {used:true,damage:dealt};}
+ if(spec.charge){if(att.volatile.charge!==mv.id){att.volatile.charge=mv.id;log(`${att.displayName} began charging ${moveLabel(mv.id)}.`);return {used:true,charging:true};}att.volatile.charge=null;
+ }
+ if(mv.power){let total=0;const hits=mv.multihit?(Array.isArray(mv.multihit)?mv.multihit[0]+randomInt(Math.max(1,mv.multihit[1]-mv.multihit[0]+1)):mv.multihit):1;for(let i=0;i<hits&&def.hp>0;i++){const r=damage(att,def,mv);let dealt=Math.min(def.hp,r.dmg);def.hp=Math.max(0,def.hp-dealt);total+=dealt;if(r.crit)log(`${att.displayName} landed a CRITICAL HIT!`);if(r.e===0)log('It had no effect.');else if(r.e>1)log('It was super effective!');else if(r.e<1)log('It was not very effective.');if(dealt)log(`${att.displayName} dealt ${dealt} damage with ${moveLabel(mv.id)}.`);if(spec.drain&&dealt)att.hp=Math.min(att.max.hp,att.hp+Math.max(1,Math.floor(dealt*spec.drain)));if(spec.recoil&&dealt)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(dealt*spec.recoil)));}
+ if(spec.flinch&&def.hp>0&&Math.random()*100<spec.flinch)def.volatile.flinch=true;
+ return {used:true,damage:total};}
+ log(`${att.displayName} used ${moveLabel(mv.id)}.`);return {used:true,damage:0};
+}
 function chooseEnemyMove(mon){const usable=mon.moves.filter(m=>mon.pp[m.id]>0);return usable.length?usable[randomInt(usable.length)]:mon.moves[0];}
 function legalSwitch(team,index,activeIndex){return Number.isInteger(index)&&index>=0&&index<team.length&&index!==activeIndex&&team[index].hp>0;}
-function finishFaint(b,side,log){const team=side==='my'?b.my:b.foe;const activeIndex=side==='my'?b.mi:b.fi;const mon=team[activeIndex];if(mon.hp>0)return null;log.push(`${mon.displayName} fainted!`);if(team.every(x=>x.hp<=0)){b.over=true;log.push(side==='my'?'You lose!':'You win!');return null;}if(side==='my')b.waitingSwitch=true;else{const n=team.findIndex(x=>x.hp>0);if(n>=0)b.fi=n;log.push(`Opponent sent out ${team[b.fi].displayName}.`);}return null;}
-function doTurn(idx){const b=S.battle;if(b.over||b.waitingSwitch)return;const a=active('my'),d=active('foe'),mv=a.moves[idx],em=chooseEnemyMove(d);if(!mv||a.pp[mv.id]<=0)return;b.log.push(`Turn ${b.turn}`);const order=[];const as=effectiveStat(a,'spe')*(a.status==='par'?.25:1),ds=effectiveStat(d,'spe')*(d.status==='par'?.25:1);if(as>ds||(as===ds&&Math.random()<.5))order.push([a,d,mv],[d,a,em]);else order.push([d,a,em],[a,d,mv]);for(const[x,y,m]of order){if(x.hp<=0||y.hp<=0)continue;resolveMove(x,y,m,b.log.push.bind(b.log));if(y.hp<=0)break;}endTurn(a,b.log.push.bind(b.log));endTurn(d,b.log.push.bind(b.log));finishFaint(b,'my',b.log);if(!b.over&&!b.waitingSwitch)finishFaint(b,'foe',b.log);b.turn++;render();}
-function manualSwitch(index){const b=S.battle;if(b.over||!legalSwitch(b.my,index,b.mi))return;b.mi=index;b.waitingSwitch=false;b.log.push(`You switched to ${b.my[index].displayName}.`);render();}
-function active(side){return side==='my'?S.battle.my[S.battle.mi]:S.battle.foe[S.battle.fi];}
-function startLocal(){if(S.team.length!==6){alert('Choose six Pokémon first.');return;}for(const id of S.team){const c=S.moves.get(id)||[];if(c.length!==4){alert(`${S.byId.get(id).displayName} needs exactly four moves.`);return;}}const foePool=S.mons.filter(m=>!S.team.includes(m.id)),foe=[];while(foe.length<6){const m=foePool[randomInt(foePool.length)];if(!foe.some(x=>x.id===m.id)){const moves=legalMoves(m).slice(0,4).map(x=>x.id);foe.push(buildMon(m,moves));}}S.battle={mode:'local',my:S.team.map(id=>buildMon(S.byId.get(id),S.moves.get(id))),foe,mi:0,fi:0,turn:1,log:['Battle started!'],over:false,waitingSwitch:false};nav('battle');}
+function finishFaint(b,side,log){const team=side==='my'?b.my:b.foe;const activeIndex=side==='my'?b.mi:b.fi;const mon=team[activeIndex];if(mon.hp>0)return null;log.push(`${mon.displayName} fainted!`);if(team.every(x=>x.hp<=0)){b.over=true;log.push(side==='my'?'You lose!':'You win!');return null;}if(side==='my')b.waitingSwitch=true;else{const n=team.findIndex(x=>x.hp>0);if(n>=0){onSwitchOut(mon);b.fi=n;onSwitchIn(team[b.fi]);}log.push(`Opponent sent out ${team[b.fi].displayName}.`);}return null;}
+function forceSwitchTeam(team,index,log,label){const n=team.findIndex((x,i)=>i!==index&&x.hp>0);if(n>=0){onSwitchOut(team[index]);onSwitchIn(team[n]);log.push(`${label} was forced to switch to ${team[n].displayName}.`);return n;}return index;}
+function resolveLocalAction(action){
+ const b=S.battle;if(b.over)return;
+ if(b.waitingSwitch){if(action.type!=='switch'||!legalSwitch(b.my,action.index,b.mi))return;const old=b.mi;onSwitchOut(b.my[old]);b.mi=action.index;b.waitingSwitch=false;onSwitchIn(b.my[b.mi]);b.log.push(`You sent out ${b.my[b.mi].displayName}.`);render();return;}
+ const a=active('my'),d=active('foe');
+ let enemyAction={type:'move',index:chooseEnemyMove(d)?.id};
+ const mySwitch=action.type==='switch';
+ if(mySwitch&&!legalSwitch(b.my,action.index,b.mi))return;
+ b.log.push(`Turn ${b.turn}`);
+ if(mySwitch){
+   const old=b.mi;onSwitchOut(b.my[old]);b.mi=action.index;onSwitchIn(b.my[b.mi]);b.log.push(`You switched from ${b.my[old].displayName} to ${b.my[b.mi].displayName}.`);
+   const em=chooseEnemyMove(d);if(em)resolveMove(d,b.my[b.mi],em,b.log.push.bind(b.log));
+ }else{
+   const mv=a.moves[action.index],em=chooseEnemyMove(d);if(!mv||a.pp[mv.id]<=0)return;
+   const as=effectiveStat(a,'spe')+(mv.priority||0)*1000,ds=effectiveStat(d,'spe')+(em?.priority||0)*1000;
+   if(as>ds||(as===ds&&Math.random()<.5)){
+     const r=resolveMove(a,d,mv,b.log.push.bind(b.log));
+     if(r.forceSwitch&&d.hp>0)b.fi=forceSwitchTeam(b.foe,b.fi,b.log,'Opponent');
+     if(d.hp>0&&em)resolveMove(d,a,em,b.log.push.bind(b.log));
+   }else{
+     if(em){const r=resolveMove(d,a,em,b.log.push.bind(b.log));if(r.forceSwitch&&a.hp>0)b.mi=forceSwitchTeam(b.my,b.mi,b.log,'You');}
+     if(a.hp>0)resolveMove(a,d,mv,b.log.push.bind(b.log));
+   }
+ }
+ endTurn(a,b.log.push.bind(b.log));endTurn(d,b.log.push.bind(b.log));
+ finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);b.turn++;render();
+}
+function doTurn(idx){resolveLocalAction({type:'move',index:idx});}
+function manualSwitch(index){resolveLocalAction({type:'switch',index});}
 
-function serializeMon(m){return{id:m.id,hp:m.hp,status:m.status,statusTurns:m.statusTurns,boosts:m.boosts,pp:m.pp,max:m.max,moves:m.moves.map(x=>x.id)};}
-function hydrateBattleTeam(arr){return(arr||[]).map(x=>{const base=S.byId.get(x.id);const m=buildMon(base,x.moves||[]);m.hp=x.hp??m.hp;m.status=x.status??null;m.statusTurns=x.statusTurns??0;m.boosts={...m.boosts,...(x.boosts||{})};m.pp={...m.pp,...(x.pp||{})};return m;});}
+function active(side){return side==='my'?S.battle.my[S.battle.mi]:S.battle.foe[S.battle.fi];}
+function startLocal(){if(S.team.length!==6){alert('Choose six Pokémon first.');return;}for(const id of S.team){const c=(S.moves.get(id)||[]).filter(x=>moveData(x));if(c.length!==4){alert(`${S.byId.get(id).displayName} needs exactly four valid Gen I moves.`);return;}}const foePool=S.mons.filter(m=>!S.team.includes(m.id)),foe=[];while(foe.length<6){const m=foePool[randomInt(foePool.length)];if(!foe.some(x=>x.id===m.id)){const moves=recommendedMoves(m);foe.push(buildMon(m,moves));}}S.battle={mode:'local',my:S.team.map(id=>buildMon(S.byId.get(id),S.moves.get(id))),foe,mi:0,fi:0,turn:1,log:['Battle started!'],over:false,waitingSwitch:false};nav('battle');}
+
+function serializeMon(m){return{id:m.id,hp:m.hp,status:m.status,statusTurns:m.statusTurns,toxicCounter:m.toxicCounter||0,boosts:m.boosts,volatile:m.volatile||{},leechSeed:!!m.leechSeed,pp:m.pp,max:m.max,moves:m.moves.map(x=>x.id)};}
+function hydrateBattleTeam(arr){return(arr||[]).map(x=>{const base=S.byId.get(x.id);const m=buildMon(base,x.moves||[]);m.hp=x.hp??m.hp;m.status=x.status??null;m.statusTurns=x.statusTurns??0;m.boosts={...m.boosts,...(x.boosts||{})};m.toxicCounter=x.toxicCounter||0;m.volatile={...(x.volatile||{})};m.pp={...m.pp,...(x.pp||{})};return m;});}
 function makeTeamPayload(){return S.team.map(id=>({id,moves:S.moves.get(id)}));}
 function hydrateChosenTeam(payload){return(payload||[]).map(x=>buildMon(S.byId.get(x.id),x.moves||[]));}
 
-function battlePage(){const b=S.battle;if(!b){app.innerHTML=`<section class="hero"><h2>No battle loaded</h2><button class="btn primary" id="team">BUILD TEAM</button></section>`;return;}const a=active('my'),d=active('foe');const fighter=m=>{const pct=Math.max(0,m.hp/m.max.hp*100);return`<div class="fighter"><div class="row"><strong>${esc(m.displayName)}</strong><span class="spacer">Lv.50</span></div><img src="${SPRITE(m.id)}"><div class="hp ${pct<25?'low':''}"><i style="width:${pct}%"></i></div><div class="muted">${m.hp}/${m.max.hp} HP • ${m.types.map(cap).join(' / ')}</div>${m.status?`<div class="pill">${m.status.toUpperCase()}</div>`:''}</div>`;};let body='';if(b.over)body=`<div class="notice result ${b.my.every(x=>x.hp<=0)?'lose':'win'}">${b.my.every(x=>x.hp<=0)?'💀 Defeat':'🏆 Victory'} <button class="btn primary" id="rematch">NEW LOCAL BATTLE</button></div>`;else if(b.mode==='online'&&b.waitingRemote)body=`<div class="notice">Waiting for the other player…</div>`;else if(b.waitingSwitch)body=`<div class="notice"><b>Choose your next Pokémon.</b></div><div class="bench">${b.my.map((x,i)=>`<button class="btn" data-switch="${i}" ${x.hp<=0?'disabled':''}>${esc(x.displayName)} ${x.hp}/${x.max.hp}</button>`).join('')}</div>`;else body=`<div class="actions">${a.moves.map((m,i)=>`<button class="movebtn" data-act="${i}" ${a.pp[m.id]<=0?'disabled':''}><strong>${moveLabel(m.id)}</strong><div class="muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${a.pp[m.id]} PP</div></button>`).join('')}</div><div class="bench">${b.my.map((x,i)=>`<button class="btn" data-switch="${i}" disabled>${esc(x.displayName)} ${x.hp}/${x.max.hp}</button>`).join('')}</div>`;app.innerHTML=`<section class="panel"><div class="row"><div><div class="brand">${b.mode==='online'?'ONLINE MATCH':'LOCAL BATTLE'}</div><h2 style="margin:.2rem 0">Turn ${b.turn}</h2></div><div class="spacer"></div><button class="btn danger" id="forfeit">FORFEIT</button></div><div class="battlegrid" style="margin-top:10px">${fighter(d)}${fighter(a)}</div><div class="log">${b.log.slice(-20).map(x=>`<div>${esc(x)}</div>`).join('')}</div>${body}</section>`;}
+function battlePage(){const b=S.battle;if(!b){app.innerHTML=`<section class="hero"><h2>No battle loaded</h2><button class="btn primary" id="team">BUILD TEAM</button></section>`;return;}const a=active('my'),d=active('foe');const fighter=m=>{const pct=Math.max(0,m.hp/m.max.hp*100);return`<div class="fighter"><div class="row"><strong>${esc(m.displayName)}</strong><span class="spacer">Lv.50</span></div><img src="${SPRITE(m.id)}"><div class="hp ${pct<25?'low':''}"><i style="width:${pct}%"></i></div><div class="muted">${m.hp}/${m.max.hp} HP • ${m.types.map(cap).join(' / ')}</div>${m.status?`<div class="pill">${m.status.toUpperCase()}</div>`:''}</div>`;};let body='';if(b.over)body=`<div class="notice result ${b.my.every(x=>x.hp<=0)?'lose':'win'}">${b.my.every(x=>x.hp<=0)?'💀 Defeat':'🏆 Victory'} <button class="btn primary" id="rematch">NEW LOCAL BATTLE</button></div>`;else if(b.mode==='online'&&b.waitingRemote)body=`<div class="notice">Waiting for the other player…</div>`;else if(b.waitingSwitch)body=`<div class="notice"><b>Choose your next Pokémon.</b></div><div class="bench">${b.my.map((x,i)=>`<button class="btn" data-switch="${i}" ${x.hp<=0?'disabled':''}>${esc(x.displayName)} ${x.hp}/${x.max.hp}</button>`).join('')}</div>`;else body=`<div class="actions">${a.moves.map((m,i)=>`<button class="movebtn" data-act="${i}" ${a.pp[m.id]<=0?'disabled':''}><strong>${moveLabel(m.id)}</strong><div class="muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${a.pp[m.id]} PP</div></button>`).join('')}</div><div class="bench">${b.my.map((x,i)=>`<button class="btn" data-switch="${i}" ${x.hp<=0||i===b.mi?'disabled':''}>${esc(x.displayName)} ${x.hp}/${x.max.hp}</button>`).join('')}</div>`;app.innerHTML=`<section class="panel"><div class="row"><div><div class="brand">${b.mode==='online'?'ONLINE MATCH':'LOCAL BATTLE'}</div><h2 style="margin:.2rem 0">Turn ${b.turn}</h2></div><div class="spacer"></div><button class="btn danger" id="forfeit">FORFEIT</button></div><div class="battlegrid" style="margin-top:10px">${fighter(d)}${fighter(a)}</div><div class="log">${b.log.slice(-20).map(x=>`<div>${esc(x)}</div>`).join('')}</div>${body}</section>`;}
 
 async function auth(){const sb=createClient(SUPABASE_URL,SUPABASE_KEY);const{data,error}=await sb.auth.signInAnonymously();if(error)throw error;return{sb,user:data.user};}
 async function createOnline(){if(S.team.length!==6){alert('Build a six-Pokémon team first.');nav('team');return;}for(const id of S.team){await ensureMoves(S.byId.get(id));if((S.moves.get(id)||[]).length!==4)throw Error(`${S.byId.get(id).displayName} needs exactly four moves.`);}const{sb,user}=await auth(),code=Math.random().toString(36).slice(2,8).toUpperCase(),team=makeTeamPayload();const{data:room,error}=await sb.from('pvp_rooms').insert({code,host_id:user.id,status:'waiting',battle_state:{hostTeam:team,guestTeam:null,hostReady:false,guestReady:false,turn:1,result:null,hostIndex:0,guestIndex:0}}).select().single();if(error)throw error;S.online={sb,user,roomId:room.id,code,role:'host',channel:null};subscribeOnline();onlineLobby();}
@@ -94,6 +297,7 @@ async function maybeResolveOnline(roomId){
  const o=S.online;if(!o||o.role!=='host')return;
  const {data:room,error}=await o.sb.from('pvp_rooms').select('*').eq('id',roomId).single();if(error)throw error;
  const st=room.battle_state||{};if(room.status!=='battle'||st.result)return;
+ const {error:lockError}=await o.sb.from('pvp_turn_locks').insert({room_id:roomId,turn:st.turn});if(lockError){if(lockError.code==='23505')return;throw lockError;}
  const {data:acts,error:ae}=await o.sb.from('pvp_actions').select('*').eq('room_id',roomId).eq('turn',st.turn).order('created_at');if(ae)throw ae;
  const byRole={};for(const x of acts||[]){const role=x.player_id===room.host_id?'host':x.player_id===room.guest_id?'guest':null;if(role&&!byRole[role])byRole[role]=x.action;}
  if(!byRole.host||!byRole.guest)return;
@@ -102,22 +306,30 @@ async function maybeResolveOnline(roomId){
  const hostForced=h.hp<=0,guestForced=g.hp<=0;
  const validAction=(team,idx,action,forced)=>action?.type==='switch'?legalSwitch(team,action.index,idx):(!forced&&action?.type==='move'&&team[idx]?.moves?.[action.index]&&team[idx].pp[team[idx].moves[action.index].id]>0);
  if(!validAction(host,hi,byRole.host,hostForced)||!validAction(guest,gi,byRole.guest,guestForced)){await o.sb.from('pvp_actions').delete().eq('room_id',roomId).eq('turn',st.turn);return;}
- const switchFirst=(team,idx,action,label)=>{if(action.type!=='switch')return idx;const next=action.index;log.push(`${label} switched to ${team[next].displayName}.`);return next;};
- if(hostForced)hi=switchFirst(host,hi,byRole.host,'Player 1');
- if(guestForced)gi=switchFirst(guest,gi,byRole.guest,'Player 2');
- const ha=byRole.host,ga=byRole.guest;
- const execute=(actor,target,action)=>{if(action.type==='move'){const mv=actor.moves[action.index];if(mv)resolveMove(actor,target,mv,log.push.bind(log));}};
- if(hostForced&&guestForced){
-   // Both sides were knocked out at the end of the previous turn: both switches resolve before any attack.
- } else if(hostForced&&!guestForced){
-   execute(guest[gi],host[hi],ga);
- } else if(guestForced&&!hostForced){
-   execute(host[hi],guest[gi],ha);
- } else {
-   const a=host[hi],d=guest[gi],first=ha.type==='switch'?true:ga.type==='switch'?false:(effectiveStat(a,'spe')*(a.status==='par'?.25:1)>effectiveStat(d,'spe')*(d.status==='par'?.25:1)||(effectiveStat(a,'spe')===effectiveStat(d,'spe')&&Math.random()<.5));
-   if(first){execute(host[hi],guest[gi],ha);if(guest[gi].hp>0)execute(guest[gi],host[hi],ga);}else{execute(guest[gi],host[hi],ga);if(host[hi].hp>0)execute(host[hi],guest[gi],ha);}
+ const applySwitch=(team,idx,action,label)=>{if(action.type!=='switch')return idx;if(!legalSwitch(team,action.index,idx))return idx;onSwitchOut(team[idx]);onSwitchIn(team[action.index]);log.push(`${label} switched to ${team[action.index].displayName}.`);return action.index;};
+ const hostAction=byRole.host,guestAction=byRole.guest;
+ if(hostForced||guestForced){
+   if(hostForced)hi=applySwitch(host,hi,hostAction,'Player 1');
+   if(guestForced)gi=applySwitch(guest,gi,guestAction,'Player 2');
+   if(host[hi].hp<=0||guest[gi].hp<=0){await o.sb.from('pvp_actions').delete().eq('room_id',roomId).eq('turn',st.turn);return;}
+   if(!hostForced&&!guestForced){} else if(hostForced&&!guestForced){const mv=guest[gi].moves[guestAction.index];if(guestAction.type==='move')resolveMove(guest[gi],host[hi],mv,log.push.bind(log));} else if(guestForced&&!hostForced){const mv=host[hi].moves[hostAction.index];if(hostAction.type==='move')resolveMove(host[hi],guest[gi],mv,log.push.bind(log));}
+ }else{
+   const hostSwitch=hostAction.type==='switch',guestSwitch=guestAction.type==='switch';
+   if(hostSwitch||guestSwitch){
+     if(hostSwitch)hi=applySwitch(host,hi,hostAction,'Player 1');
+     if(guestSwitch)gi=applySwitch(guest,gi,guestAction,'Player 2');
+     if(!hostSwitch&&!guestSwitch){}
+     if(hostSwitch&&guestSwitch){}
+     else if(hostSwitch&&guest[gi].hp>0&&guestAction.type==='move')resolveMove(guest[gi],host[hi],guest[gi].moves[guestAction.index],log.push.bind(log));
+     else if(guestSwitch&&host[hi].hp>0&&hostAction.type==='move')resolveMove(host[hi],guest[gi],host[hi].moves[hostAction.index],log.push.bind(log));
+   }else{
+     const ha=hostAction,ga=guestAction,a=host[hi],d=guest[gi],hm=a.moves[ha.index],gm=d.moves[ga.index];
+     const hs=effectiveStat(a,'spe')+(hm.priority||0)*1000,gs=effectiveStat(d,'spe')+(gm.priority||0)*1000;
+     const hostFirst=hs>gs||(hs===gs&&Math.random()<.5);
+     if(hostFirst){resolveMove(a,d,hm,log.push.bind(log));if(d.hp>0)resolveMove(d,a,gm,log.push.bind(log));}
+     else{resolveMove(d,a,gm,log.push.bind(log));if(a.hp>0)resolveMove(a,d,hm,log.push.bind(log));}
+   }
  }
- const ah=host[hi],ag=guest[gi];endTurn(ah,log.push.bind(log));endTurn(ag,log.push.bind(log));
  let result=null;if(host.every(x=>x.hp<=0))result='guest';else if(guest.every(x=>x.hp<=0))result='host';
  const next={...st,turn:st.turn+1,result,hostIndex:hi,guestIndex:gi,hostBattle:host.map(serializeMon),guestBattle:guest.map(serializeMon),log};
  const {error:ue}=await o.sb.from('pvp_rooms').update({battle_state:next,status:result?'finished':'battle'}).eq('id',roomId);if(ue)throw ue;
@@ -133,10 +345,10 @@ app.addEventListener('input',e=>{if(e.target.id==='search'){S.search=e.target.va
 app.addEventListener('change',e=>{if(e.target.id==='filter'){S.type=e.target.value;render();}if(e.target.id==='sort'){S.sort=e.target.value;render();}});
 app.addEventListener('click',async e=>{const b=e.target.closest('button,.move');if(!b)return;try{
  if(b.id==='build')nav('team');
- else if(b.id==='quick'){if(S.team.length!==6){S.team=[1,4,7,25,59,94];for(const id of S.team)await ensureMoves(S.byId.get(id));}startLocal();}
+ else if(b.id==='quick'){if(S.team.length!==6){S.team=[1,4,7,25,59,94];for(const id of S.team){const mon=S.byId.get(id);await ensureMoves(mon);S.moves.set(id,recommendedMoves(mon));}}startLocal();}
  else if(b.dataset.pick){S.selected=+b.dataset.pick;await ensureMoves(S.byId.get(S.selected));render();}
  else if(b.dataset.remove){S.team=S.team.filter(x=>x!==+b.dataset.remove);render();}
- else if(b.id==='add'){if(S.selected&&!S.team.includes(S.selected)&&S.team.length<6){S.team.push(S.selected);await ensureMoves(S.byId.get(S.selected));render();}}
+ else if(b.id==='add'){if(S.selected&&!S.team.includes(S.selected)&&S.team.length<6){const mon=S.byId.get(S.selected);await ensureMoves(mon);S.team.push(S.selected);S.moves.set(S.selected,recommendedMoves(mon));render();}}
  else if(b.dataset.move){const id=+b.dataset.mon,n=b.dataset.move,arr=S.moves.get(id)||[];if(arr.includes(n))S.moves.set(id,arr.filter(x=>x!==n));else if(arr.length<4)S.moves.set(id,[...arr,n]);render();}
  else if(b.id==='start')startLocal();else if(b.id==='create')await createOnline();else if(b.id==='join')await joinOnline();else if(b.id==='readyOnline')await readyOnline();else if(b.id==='copy'){await navigator.clipboard?.writeText(S.online.code);alert('Room code copied: '+S.online.code);}else if(b.id==='leaveOnline')await leaveOnline();
  else if(b.dataset.act){if(S.battle.mode==='online')await submitOnlineAction({type:'move',index:+b.dataset.act});else doTurn(+b.dataset.act);}

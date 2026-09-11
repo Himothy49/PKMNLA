@@ -1,34 +1,34 @@
-# Kanto PvP — Clean V2
+# Kanto PvP — Clean V5
 
-This build is a cleaned and regression-tested Gen I Kanto PvP prototype.
+A static Gen I Kanto 6v6 PvP prototype with a deliberately modernized Ghost/Psychic interaction.
 
-## What changed
+## Mechanics pass
 
-- Uses the Gen I data layer for the 151 Kanto roster, Gen I base stats/types and Red/Blue learnsets.
-- Team Builder locks exactly four selected legal moves to each Pokémon.
-- Battle uses those exact four selected moves.
-- Explicit Gen I move-type safeguards: Bite, Gust, Karate Chop and Razor Wind are Normal; Sand-Attack is Ground.
-- Gen I physical/special classification is type-based.
-- Type chart fixes Normal/Ghost and Fighting/Ghost immunities and deliberately makes both Ghost→Psychic and Psychic→Ghost 2× as requested.
-- Level 50 stat model with Gen I single Special stat.
-- PP, accuracy, STAB, criticals, status conditions, stat stages, recovery, drain and recoil are implemented for the supported move effects.
-- Local 6v6 switching after fainting works; active Pokémon cannot freely switch without spending a turn.
-- Online actions use a separate `pvp_actions` queue, preventing both players from overwriting the same JSON battle-state object.
-- Online switching after fainting is supported.
-- Room joining uses a conditional guest-slot update to reduce join races.
-- Realtime room and action subscriptions are included.
+- 151 Gen I species, 15 Gen I types and 165 Gen I moves are validated at startup.
+- Every Pokémon must expose at least four Red/Blue-legal moves before the game becomes playable.
+- Team Builder requires exactly six Pokémon and exactly four legal moves per Pokémon.
+- The four selected moves are the exact moves instantiated in battle.
+- Gen I physical/special split is type-based and Gen I uses a single Special stat.
+- Corrected historical Gen I move typing: Bite, Gust, Karate Chop and Razor Wind are Normal; Sand-Attack is Ground.
+- Type-chart regression tests include Normal/Ghost immunity, Fighting/Ghost immunity, Electric/Ground immunity, Ground/Flying immunity and the requested Ghost/Psychic 2x interaction in both directions.
+- Level 50 Gen I stat calculation with max DV/stat experience defaults.
+- PP, accuracy, stat stages, STAB, critical-hit handling, burn Attack reduction and paralysis Speed reduction.
+- Major status conditions, Toxic scaling, Leech Seed, recovery, drain, recoil, fixed-damage moves, OHKO moves, multi-hit moves, charge/recharge states and common stat/status effects.
+- Stat boosts, confusion and other battle volatiles are cleared appropriately on switch-out where required.
+- Voluntary switching costs a turn; forced replacement after fainting is handled separately.
+- Online actions are queued separately and a per-room/per-turn database lock prevents duplicate host resolution.
 
-## Important online note
+## Important limitation
 
-This is a **casual online V2**. The host browser resolves the battle after receiving both validated action records. This is much safer than letting both browsers mutate the same state, but it is not the final anti-cheat/ranked architecture. A future ranked version should move the battle resolver to a Supabase Edge Function or another trusted server.
+This is a substantially more rigorous custom battle core, but it is **not claimed to be a byte-for-byte cartridge emulator for every obscure Gen I move glitch/effect**. The pkmn project documents a dedicated Gen I engine that aims at cartridge-level fidelity and is the right long-term foundation if the project eventually needs tournament-grade emulator accuracy.
+
+The project intentionally does **not** reproduce the original Ghost → Psychic Gen I bug; both directions are super effective because that is the rule requested for this game.
 
 ## Supabase
 
-Run `supabase_schema.sql` in Supabase SQL Editor. It is safe to run after the original schema because it uses `IF NOT EXISTS` / policy guards and adds the `pvp_actions` table plus realtime configuration.
+Run `supabase_schema.sql` in Supabase SQL Editor. It is designed to be rerunnable and adds `pvp_turn_locks` for duplicate-resolution protection. Anonymous Sign-Ins must be enabled.
 
-Anonymous Sign-Ins must be enabled under Authentication → Providers.
-
-## Testing
+## Tests
 
 Run:
 
@@ -37,8 +37,11 @@ node --check app.mjs
 node tests.mjs
 ```
 
-Both must pass before deployment.
+Both must pass.
 
 ## Hosting
 
-The game is a static site. Upload `index.html` and `app.mjs` together to GitHub Pages. Keep `supabase_schema.sql` in the repository for reference; it is not loaded by the browser.
+Upload `index.html`, `app.mjs`, `tests.mjs`, `README.md` and `supabase_schema.sql` to the repository root. GitHub Pages only needs `index.html` and `app.mjs` at runtime.
+
+
+Move-selection fix: Team Builder now starts each Pokémon with a curated, Red/Blue-legal recommended four-move set. The full legal Gen I move pool remains available so players can replace any recommendation. Quick Battle opponents also use recommended legal sets rather than the first four moves alphabetically.

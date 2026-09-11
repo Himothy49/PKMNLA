@@ -21,6 +21,21 @@ create table if not exists public.pvp_actions (
   unique(room_id, player_id, turn)
 );
 
+
+create table if not exists public.pvp_turn_locks (
+  room_id uuid not null references public.pvp_rooms(id) on delete cascade,
+  turn integer not null check (turn > 0),
+  created_at timestamptz not null default now(),
+  primary key (room_id, turn)
+);
+
+alter table public.pvp_turn_locks enable row level security;
+DO $$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='pvp_turn_locks' AND policyname='pvp turn lock host insert') THEN
+  CREATE POLICY "pvp turn lock host insert" ON public.pvp_turn_locks FOR INSERT TO authenticated WITH CHECK (exists(select 1 from public.pvp_rooms r where r.id=room_id and r.host_id=auth.uid()));
+ END IF;
+END $$;
+
 alter table public.pvp_rooms enable row level security;
 alter table public.pvp_actions enable row level security;
 

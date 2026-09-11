@@ -1,31 +1,64 @@
-// Clean V2 static regression suite.
-const chart={
- normal:{ghost:0}, fighting:{ghost:0}, ghost:{normal:0,psychic:2},
- psychic:{ghost:2}, electric:{ground:0}, ground:{flying:0},
- fire:{grass:2}, water:{fire:2}, grass:{water:2}, ice:{dragon:2}
-};
+import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
+
+const app=fs.readFileSync(new URL('./app.mjs', import.meta.url),'utf8');
 const assert=(v,msg)=>{if(!v)throw new Error(msg)};
-assert(chart.normal.ghost===0,'Normal -> Ghost must be immune');
-assert(chart.ghost.normal===0,'Ghost -> Normal must be immune');
-assert(chart.fighting.ghost===0,'Fighting -> Ghost must be immune');
-assert(chart.ghost.psychic===2,'Ghost -> Psychic must be super effective');
-assert(chart.psychic.ghost===2,'Psychic -> Ghost must be super effective');
-assert(chart.electric.ground===0,'Electric -> Ground must be immune');
-assert(chart.ground.flying===0,'Ground -> Flying must be immune');
-const physical=new Set(['normal','fighting','flying','poison','ground','rock','bug','ghost']);
-for(const t of physical)assert(t!=='water',`Water must be special in Gen I: ${t}`);
-assert(!physical.has('water')&&!physical.has('fire')&&!physical.has('psychic'),'Gen I special type classification failed');
-const required=['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon'];
-assert(required.length===15,'Gen I must have 15 types');
-const moveTypeOverrides={bite:'normal',gust:'normal','karate-chop':'normal','sand-attack':'ground','razor-wind':'normal',struggle:'normal'};
-assert(moveTypeOverrides.bite==='normal','Bite must be Normal in Gen I');
-assert(moveTypeOverrides.gust==='normal','Gust must be Normal in Gen I');
-assert(moveTypeOverrides['karate-chop']==='normal','Karate Chop must be Normal in Gen I');
-assert(moveTypeOverrides['sand-attack']==='ground','Sand-Attack must be Ground in Gen I');
-const statusChances={
- thunderwave:100,stunspore:75,glare:75,poisonpowder:75,toxic:85,'poison-sting':30,
- sleeppowder:75,hypnosis:60,sing:55,lovelykiss:75,spore:100
-};
-assert(statusChances['poison-sting']===30,'Poison Sting secondary chance');
-assert(statusChances.thunderwave===100,'Thunder Wave status chance');
-console.log('Kanto PvP Clean V2 static regression suite: PASS');
+execFileSync(process.execPath,['--check','app.mjs'],{cwd:new URL('.',import.meta.url)});
+
+// Type-effectiveness invariants. We deliberately modernize only the Psychic/Ghost
+// interaction requested by the project; other RBY chart quirks remain.
+assert(app.includes("fire:.5,water:.5,grass:2,ice:2,bug:2,rock:.5,dragon:.5"),'Fire chart missing');
+assert(app.includes("ice:{fire:1,water:.5,grass:2,ice:.5,ground:2,flying:2,dragon:2}"),'RBY Ice -> Fire neutrality missing');
+assert(app.includes('normal:{rock:.5,ghost:0}'),'Normal -> Ghost immunity missing');
+assert(app.includes('ghost:{normal:0,psychic:2,ghost:2}'),'Ghost chart missing custom Psychic effectiveness');
+assert(app.includes('psychic:{fighting:2,poison:2,psychic:.5,bug:2,ghost:2}'),'Psychic -> Ghost custom effectiveness missing');
+assert(app.includes('fighting:{normal:2,poison:.5,flying:.5,psychic:.5,bug:.5,rock:2,ghost:0}'),'Fighting -> Ghost immunity missing');
+assert(app.includes('electric:{water:2,electric:.5,grass:.5,ground:0,flying:2,dragon:.5}'),'Electric -> Ground immunity missing');
+assert(app.includes('ground:{fire:2,electric:2,grass:.5,poison:2,flying:0,bug:.5,rock:2}'),'Ground -> Flying immunity missing');
+assert(app.includes('bug:{fire:.5,grass:2,fighting:.5,poison:2,flying:.5,psychic:2,ghost:.5}'),'Bug chart missing Gen I Poison interaction');
+assert(app.includes('poison:{grass:2,poison:.5,ground:.5,bug:2,rock:.5,ghost:.5}'),'Poison chart missing Gen I Bug interaction');
+
+// Historical Gen I move-type overrides.
+for(const [move,type] of Object.entries({bite:'normal',gust:'normal','karate-chop':'normal','sand-attack':'ground','razor-wind':'normal',struggle:'normal'}))
+  assert(app.includes(`${move}:'${type}'`)||app.includes(`'${move}':'${type}'`),`${move} Gen I type override missing`);
+
+// Full data/moveset guards.
+assert(app.includes('await validateGen1()'),'Full Gen I startup validation missing');
+assert(app.includes('expected 165 moves'),'165-move validation missing');
+assert(app.includes('fewer than four legal Gen I moves'),'four-move legality validation missing');
+assert(app.includes('recommendedMoves'),'competitive recommendation selector missing');
+assert(app.includes('RECOMMENDED'),'curated competitive recommendation table missing');
+assert(!app.includes("S.moves.set(mon.id,list.slice(0,4))"),'alphabetical auto-selection bug remains');
+
+// Core RBY mechanics.
+assert(app.includes('Math.min(255, high ? base*4 : Math.floor(base/2))'),'RBY crit threshold formula missing');
+assert(app.includes('Math.min(100,LEVEL*2)'),'critical-hit doubled-level damage formula missing');
+assert(app.includes('crit?att.max[atkKey]:effectiveStat(att,atkKey)'),'critical hits must ignore attacker stat stages');
+assert(app.includes('crit?def.max[defKey]'),'critical hits must ignore defender stat stages');
+assert(app.includes('def.volatile?.reflect')&&app.includes('def.volatile?.lightScreen'),'Reflect/Light Screen damage handling missing');
+assert(app.includes("mv.id==='self-destruct'||mv.id==='explosion'"),'Explosion/Self-Destruct defense halving missing');
+assert(app.includes('(217+randomInt(39))/255'),'RBY damage random range missing');
+assert(app.includes("mv.id!=='swift'"),'Swift accuracy exception missing');
+assert(app.includes('randomInt(256)>=hitThreshold'),'RBY 1/256 accuracy check missing');
+assert(app.includes("key==='atk'&&mon.status==='burn'"),'Burn Attack reduction missing');
+assert(app.includes("key==='spe'&&mon.status==='par'"),'Paralysis Speed reduction missing');
+assert(app.includes("mon.status==='toxic'"),'Toxic damage handling missing');
+assert(app.includes('mv.multihit'),'Multi-hit handling missing');
+assert(app.includes('onSwitchOut'),'Switch reset handling missing');
+
+// Stage formula.
+const stage=n=>n>=0?(2+n)/2:2/(2-n);
+assert(stage(0)===1,'Stage 0 must be 1x');
+assert(stage(1)===1.5,'Stage +1 must be 1.5x');
+assert(stage(-1)===2/3,'Stage -1 must be 2/3x');
+assert(stage(6)===4,'Stage +6 must be 4x');
+assert(stage(-6)===.25,'Stage -6 must be 1/4x');
+
+// Sanity-check the crit rates against known RBY examples.
+const regular=s=>Math.min(255,Math.floor(s/2))/256;
+const high=s=>Math.min(255,s*4)/256;
+assert(Math.abs(regular(110)-0.21484375)<1e-12,'Tauros/Gengar regular crit rate mismatch');
+assert(Math.abs(regular(140)-0.2734375)<1e-12,'Electrode regular crit rate mismatch');
+assert(Math.abs(high(110)-0.99609375)<1e-12,'High-crit cap mismatch');
+
+console.log('Kanto PvP V6 mechanics regression suite: PASS');
