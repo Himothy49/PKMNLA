@@ -45,3 +45,6 @@ Upload `index.html`, `app.mjs`, `tests.mjs`, `README.md` and `supabase_schema.sq
 
 
 Move-selection fix: Team Builder now starts each Pokémon with a curated, Red/Blue-legal recommended four-move set. The full legal Gen I move pool remains available so players can replace any recommendation. Quick Battle opponents also use recommended legal sets rather than the first four moves alphabetically.
+
+
+V7 hotfix: corrected the Gen I learnset legality call to pass species/move names, added a raw Gen I Dex learnset fallback, and removed the silent empty-learnset failure. The app now fails loudly if verified Gen I learnsets still cannot provide four legal moves.

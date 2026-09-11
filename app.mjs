@@ -59,18 +59,34 @@ async function loadData(){
 }
 async function learnset(mon){
  if(mon.learned)return mon.learned;
- // Build the Gen I legal move list from the generation-aware Learnsets API.
- // This avoids accidentally dropping TM/HM/level-1 moves when iterating raw
- // learnset records. @pkmn/data documents canLearn() as the legality check.
- const out=[];
+ const out=new Set();
+ const speciesName=mon.name;
+ // canLearn() expects species/move names or IDs. The previous build passed
+ // the Species object, causing every lookup to fail and triggering the
+ // "fewer than four legal moves" startup error.
  for(const mv of S.gen.moves){
    const id=mv.id||String(mv.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+   const name=mv.name||id;
    if(!id)continue;
    try{
-     if(await S.gen.learnsets.canLearn(mon.species,id))out.push(id);
+     if(await S.gen.learnsets.canLearn(speciesName,name))out.add(id);
    }catch{}
  }
- mon.learned=[...new Set(out)].sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
+ // Browser-safe fallback: read the raw Gen I learnset from the Gen I Dex.
+ // Red/Blue sources are 1L (level/start) and 1M (TM/HM).
+ if(out.size<4){
+   try{
+     const raw=S.dex.species.getLearnsetData(mon.name);
+     const table=raw?.learnset||raw?.data?.learnset||{};
+     for(const [id,sources] of Object.entries(table)){
+       if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(id);
+     }
+   }catch{}
+ }
+ mon.learned=[...out].filter(id=>moveData(id)).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
+ if(mon.learned.length<4){
+   throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves after both learnset checks. The Gen I learnset data did not load correctly.`);
+ }
  return mon.learned;
 }
 function moveData(id){const m=S.gen.moves.get(id);if(!m||m.exists===false)return null;const type=GEN1_MOVE_TYPE_OVERRIDES[id]||(m.type||'Normal').toLowerCase();const secondary=m.secondary||null;return{id,name:id,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1,priority:m.priority||0,multihit:m.multihit||null,drain:m.drain||0,recoil:m.recoil||0,ohko:!!m.ohko,damage:m.damage||null,status:m.status||null,volatileStatus:m.volatileStatus||null,boosts:m.boosts||null,flinch:m.flinch||0,secondary};}
