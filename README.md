@@ -73,3 +73,6 @@ V12 adds clean implementations for Counter, Conversion, Transform, Disable, Mimi
 
 
 V13: fixed the actual browser failure by bridging raw Gen I learnset IDs such as `razorleaf` to the battle/UI canonical ID `razor-leaf`. Recommended-set validation and move lookup now use the same canonical registry.
+
+
+V14 learnset fix: the browser now uses getLearnsets() as a cache/source, but independently verifies missing recommended moves with the documented Gen I canLearn() API and fills the legal pool from it when the raw source view is incomplete. This prevents false errors such as Venusaur/Razor Leaf while retaining strict legality checks.

@@ -52,7 +52,15 @@ async function validateGen1(){
    if(ls.length<4)throw Error(`${mon.displayName} has fewer than four legal Gen I moves.`);
    const pool=new Set(ls);
    const picks=RECOMMENDED[mon.id]||[];
-   for(const id of picks){const cid=canonicalMoveId(id);if(!pool.has(cid))throw Error(`Recommended moveset error: ${mon.displayName} cannot legally learn ${moveLabel(id)} in Gen I.`);} 
+   for(const id of picks){
+     const cid=canonicalMoveId(id);
+     if(!pool.has(cid)){
+       const mv=S.moveRecords.get(cid);
+       if(!mv)throw Error(`Recommended moveset error: ${moveLabel(id)} is missing from the Gen I move registry.`);
+       let ok=false;try{ok=await S.gen.learnsets.canLearn(mon.displayName,mv.name||cid);}catch{}
+       if(!ok)throw Error(`Recommended moveset error: ${mon.displayName} cannot legally learn ${moveLabel(id)} in Gen I.`);
+     }
+   }
    const rec=recommendedMoves(mon);
    if(rec.length!==4||new Set(rec).size!==4)throw Error(`Recommended moveset error: ${mon.displayName} does not have exactly four valid moves.`);
  }
@@ -83,14 +91,27 @@ async function learnset(mon){
    for(const [id,sources] of Object.entries(table)){
      if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(canonicalMoveId(id));
    }
- }catch(err){
-   for(const mv of S.gen.moves){
-     const cid=canonicalMoveId(mv.id||mv.name);const name=mv.name||cid;
+ }catch{}
+
+ // IMPORTANT: getLearnsets() can return a successfully loaded record whose
+ // shape/source tags are not the Gen I view we need. Never trust that result
+ // alone. Use the documented generation-aware canLearn() check to repair
+ // missing Gen I moves and, when necessary, build the pool from it.
+ const recommended=RECOMMENDED[mon.id]||[];
+ const mustCheck=new Set();
+ for(const id of recommended){const cid=canonicalMoveId(id);if(!out.has(cid))mustCheck.add(cid);}
+ if(out.size<4){
+   for(const mv of S.gen.moves)mustCheck.add(canonicalMoveId(mv.id||mv.name));
+ }
+ if(mustCheck.size){
+   for(const cid of mustCheck){
+     const mv=S.moveRecords.get(cid); if(!mv)continue;
+     const name=mv.name||cid;
      try{if(await S.gen.learnsets.canLearn(speciesName,name))out.add(cid);}catch{}
    }
  }
  mon.learned=[...out].filter(id=>moveData(id)).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
- if(mon.learned.length<4)throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves. The Red/Blue learnset bundle did not load correctly.`);
+ if(mon.learned.length<4)throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves after both learnset sources were checked.`);
  return mon.learned;
 }
 function moveData(id){
