@@ -3,6 +3,9 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL='https://cfffoclrpsxldfhsofha.supabase.co';
 const SUPABASE_KEY='sb_publishable_LOgq_zm7n7p6LFeOyIIhfg_xai-sh4p';
 const LEVEL=50;
+// Clean competitive rules: Gen I data and type-based physical/special, but no cartridge glitches.
+// Accuracy uses the displayed percentage exactly; Focus Energy is intuitive (4x crit rate);
+// no 1/256 miss, no desync/semi-invulnerability bugs, and no glitch-based stat reapplication.
 const SPRITE=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/${id}.png`;
 const ART=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 const TYPE_ORDER=['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon'];
@@ -18,7 +21,7 @@ const STATUS_MOVES={
  recover:{heal:50},'soft-boiled':{heal:50},rest:{heal:100,status:'sleep'},
  'swords-dance':{boost:'atk',amount:2},growth:{boost:'spc',amount:1},amnesia:{boost:'spc',amount:2},agility:{boost:'spe',amount:2},harden:{boost:'def',amount:1},withdraw:{boost:'def',amount:1},'defense-curl':{boost:'def',amount:1},meditate:{boost:'atk',amount:1},sharpen:{boost:'atk',amount:1},'acid-armor':{boost:'def',amount:2},barrier:{boost:'def',amount:2},
  leer:{boost:'foeDef',amount:-1},'tail-whip':{boost:'foeDef',amount:-1},growl:{boost:'foeAtk',amount:-1},'string-shot':{boost:'foeSpe',amount:-1},'sand-attack':{boost:'foeAcc',amount:-1},'smoke-screen':{boost:'foeAcc',amount:-1},kinesis:{boost:'foeAcc',amount:-1},flash:{boost:'foeAcc',amount:-1},screech:{boost:'foeDef',amount:-2},'double-team':{boost:'evasion',amount:1},minimize:{boost:'evasion',amount:1},
- smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},thunder:{status:'par',chance:10},thunderbolt:{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},'fire-blast':{status:'burn',chance:30},ember:{status:'burn',chance:10},'rock-slide':{flinch:30},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.33},'submission':{recoil:.25},'struggle':{recoil:.25},
+ smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},thunder:{status:'par',chance:10},thunderbolt:{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},'fire-blast':{status:'burn',chance:30},ember:{status:'burn',chance:10},'rock-slide':{},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.33},'submission':{recoil:.25},'struggle':{recoil:.25},
  'leech-seed':{volatile:'leech-seed'},substitute:{volatile:'substitute'},reflect:{volatile:'reflect'},'light-screen':{volatile:'light-screen'},haze:{volatile:'haze'},disable:{volatile:'disable'},counter:{special:'counter'},bide:{special:'bide'},'rage':{volatile:'rage'},'focus-energy':{volatile:'focus-energy'},'mist':{volatile:'mist'},'roar':{forceSwitch:true},whirlwind:{forceSwitch:true},'self-destruct':{selfdestruct:true},explosion:{selfdestruct:true},'hyper-beam':{recharge:true},'fire-spin':{volatile:'trap'},'wrap':{volatile:'trap'},bind:{volatile:'trap'},clamp:{volatile:'trap'},'vice-grip':{volatile:'trap'},'razor-wind':{charge:true},dig:{charge:true},fly:{charge:true},'solar-beam':{charge:true},'skull-bash':{charge:true},'ice-beam':{status:'freeze',chance:10}
 };
 
@@ -41,7 +44,15 @@ async function validateGen1(){
  const moves=Array.from(S.gen.moves||[]);if(moves.length!==165)throw Error(`Gen I validation failed: expected 165 moves, received ${moves.length}.`);
  const required=[["normal","ghost",0],["ghost","normal",0],["fighting","ghost",0],["ghost","psychic",2],["psychic","ghost",2],["electric","ground",0],["ground","flying",0]];
  for(const [a,b,v] of required)if(effect(a,b)!==v)throw Error(`Type chart validation failed: ${a} -> ${b}.`);
- for(const mon of S.mons){const ls=await learnset(mon);if(ls.length<4)throw Error(`${mon.displayName} has fewer than four legal Gen I moves.`);}
+ for(const mon of S.mons){
+   const ls=await learnset(mon);
+   if(ls.length<4)throw Error(`${mon.displayName} has fewer than four legal Gen I moves.`);
+   const pool=new Set(ls);
+   const picks=RECOMMENDED[mon.id]||[];
+   for(const id of picks)if(!pool.has(id))throw Error(`Recommended moveset error: ${mon.displayName} cannot legally learn ${moveLabel(id)} in Gen I.`);
+   const rec=recommendedMoves(mon);
+   if(rec.length!==4||new Set(rec).size!==4)throw Error(`Recommended moveset error: ${mon.displayName} does not have exactly four valid moves.`);
+ }
  return true;
 }
 
@@ -174,7 +185,7 @@ function recommendedMoves(mon){
 }
 function filtered(){let a=S.mons.filter(m=>{const q=S.search.toLowerCase();return(!q||m.name.includes(q)||String(m.id)===q)&&(!S.type||m.types.includes(S.type));});if(S.sort==='id')a.sort((x,y)=>x.id-y.id);else a.sort((x,y)=>(y.baseStats[S.sort]||0)-(x.baseStats[S.sort]||0));return a;}
 
-function home(){app.innerHTML=`<section class="hero"><div class="brand">GEN I COMPETITIVE ARENA</div><h1>151 Pokémon.<br><span>Your team. Your rival.</span></h1><p class="muted">Build six, choose four Red/Blue-legal moves for each, then battle locally or online. The battle rules intentionally fix the old Ghost/Psychic cartridge bug.</p><div class="row"><button class="btn primary" id="build">BUILD TEAM</button><button class="btn" id="quick">QUICK BATTLE</button></div><div class="notice">Level 50 • Gen I physical/special by move type • 151 Kanto Pokémon • 4 locked-in moves per Pokémon • <b>Ghost → Psychic = 2×</b> and <b>Psychic → Ghost = 2×</b>.</div></section><section class="panel" style="margin-top:12px"><div class="stats"><div class="stat"><b>151</b><span class="muted">Kanto</span></div><div class="stat"><b>165</b><span class="muted">Gen I moves</span></div><div class="stat"><b>6v6</b><span class="muted">teams</span></div><div class="stat"><b>4</b><span class="muted">moves each</span></div><div class="stat"><b>Lv.50</b><span class="muted">battle</span></div></div></section><section class="panel" style="margin-top:12px"><h3>Online casual PvP</h3><p class="muted">Create a private room and share the code. Player actions are written to a separate action queue, so both players cannot overwrite the same turn state.</p><div class="online"><button class="btn primary" id="create">CREATE ROOM</button><button class="btn" id="join">JOIN ROOM</button></div></section>`;}
+function home(){app.innerHTML=`<section class="hero"><div class="brand">GEN I CLEAN COMPETITIVE ARENA</div><h1>151 Pokémon.<br><span>Your team. Your rival.</span></h1><p class="muted">Build six, choose four Red/Blue-legal moves for each, then battle locally or online. Gen I data and type-based physical/special rules are preserved, while cartridge glitches and desync quirks are intentionally removed.</p><div class="row"><button class="btn primary" id="build">BUILD TEAM</button><button class="btn" id="quick">QUICK BATTLE</button></div><div class="notice">Level 50 • Gen I data • type-based physical/special • no cartridge glitches • 151 Kanto Pokémon • 4 locked-in moves per Pokémon • <b>Ghost → Psychic = 2×</b> and <b>Psychic → Ghost = 2×</b>.</div></section><section class="panel" style="margin-top:12px"><div class="stats"><div class="stat"><b>151</b><span class="muted">Kanto</span></div><div class="stat"><b>165</b><span class="muted">Gen I moves</span></div><div class="stat"><b>6v6</b><span class="muted">teams</span></div><div class="stat"><b>4</b><span class="muted">moves each</span></div><div class="stat"><b>Lv.50</b><span class="muted">battle</span></div></div></section><section class="panel" style="margin-top:12px"><h3>Online casual PvP</h3><p class="muted">Create a private room and share the code. Player actions are written to a separate action queue, so both players cannot overwrite the same turn state.</p><div class="online"><button class="btn primary" id="create">CREATE ROOM</button><button class="btn" id="join">JOIN ROOM</button></div></section>`;}
 function teamPage(){const list=filtered(),p=S.selected?S.byId.get(S.selected):null;app.innerHTML=`<section class="panel"><div class="row"><div><div class="brand">TEAM BUILDER</div><h2 style="margin:.2rem 0">Build your six</h2></div><div class="spacer"></div><span class="pill">${S.team.length}/6 Pokémon</span><button class="btn primary" id="start" ${S.team.length!==6?'disabled':''}>START LOCAL</button><button class="btn" id="create" ${S.team.length!==6?'disabled':''}>CREATE ONLINE ROOM</button></div><div class="team">${S.team.map((id,i)=>{const m=S.byId.get(id);return`<div class="slot"><span>${i+1}</span><img src="${m.sprite}"><b>${esc(m.displayName)}</b><button class="btn" data-remove="${id}">×</button></div>`;}).join('')}</div><div class="controls"><input class="input" id="search" placeholder="Search Pokémon…" value="${esc(S.search)}"><select class="select" id="filter"><option value="">All types</option>${TYPE_ORDER.map(t=>`<option ${S.type===t?'selected':''} value="${t}">${cap(t)}</option>`).join('')}</select><select class="select" id="sort"><option value="id" ${S.sort==='id'?'selected':''}>Pokédex order</option><option value="hp" ${S.sort==='hp'?'selected':''}>HP</option><option value="atk" ${S.sort==='atk'?'selected':''}>Attack</option><option value="def" ${S.sort==='def'?'selected':''}>Defense</option><option value="spc" ${S.sort==='spc'?'selected':''}>Special</option><option value="spe" ${S.sort==='spe'?'selected':''}>Speed</option></select></div><div class="grid">${list.map(m=>`<button class="dex ${S.selected===m.id?'selected':''}" data-pick="${m.id}"><span class="num">#${String(m.id).padStart(3,'0')}</span><img src="${m.sprite}" alt="${esc(m.displayName)}"><b>${esc(m.displayName)}</b><div>${m.types.map(t=>`<span class="tag">${cap(t)}</span>`).join(' / ')}</div></button>`).join('')}</div>${p?detail(p):''}</section>`;}
 function detail(p){const chosen=S.moves.get(p.id)||[],stats=p.baseStats;return`<div class="detail"><div class="portrait"><img src="${p.art}" alt="${esc(p.displayName)}"><strong>#${String(p.id).padStart(3,'0')} ${esc(p.displayName)}</strong><div>${p.types.map(t=>`<span class="pill">${cap(t)}</span>`).join('')}</div><button class="btn primary" id="add" ${S.team.includes(p.id)||S.team.length>=6?'disabled':''}>${S.team.includes(p.id)?'IN TEAM':'ADD TO TEAM'}</button></div><div><div class="stats"><div class="stat"><b>${stats.hp}</b><span class="muted">HP</span></div><div class="stat"><b>${stats.atk}</b><span class="muted">ATK</span></div><div class="stat"><b>${stats.def}</b><span class="muted">DEF</span></div><div class="stat"><b>${stats.spc}</b><span class="muted">SPC</span></div><div class="stat"><b>${stats.spe}</b><span class="muted">SPE</span></div></div><h3>Red/Blue legal moves <span class="muted small">(${chosen.length}/4 selected)</span></h3><div class="notice small">The highlighted four are recommended legal Gen I moves. You can replace any of them with another move this Pokémon could actually learn in Red/Blue.</div><div class="moves">${legalMoves(p).map(m=>`<div class="move ${chosen.includes(m.id)?'selected':''}" data-move="${m.id}" data-mon="${p.id}"><b>${moveLabel(m.id)}</b><div class="small muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${m.pp} PP</div></div>`).join('')}</div></div></div>`;}
 
@@ -187,76 +198,174 @@ function buildMon(mon,chosen){
 function cloneTeam(team){return team.map(x=>({...x,max:{...x.max},boosts:{...x.boosts},moves:x.moves.map(m=>({...m})),pp:{...x.pp}}));}
 function effectiveStat(mon,key){let raw=mon.max[key]||0;if(key==='atk'&&mon.status==='burn')raw=Math.floor(raw/2);if(key==='spe'&&mon.status==='par')raw=Math.floor(raw/4);return Math.max(1,Math.floor(raw*stage(mon.boosts[key]||0)));}
 function accuracyMultiplier(att,def){const a=stage(att.boosts.acc||0);const e=stage(def.boosts.evasion||0);return a/e;}
-function onSwitchOut(mon){mon.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};if(mon.status==='confusion')mon.status=null;mon.statusTurns=0;mon.toxicCounter=mon.status==='toxic'?1:0;mon.volatile={};mon.leechSeed=null;}
+function onSwitchOut(mon){
+ mon.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};
+ if(mon.status==='confusion')mon.status=null;
+ if(mon.status==='toxic'){mon.status='poison';mon.toxicCounter=1;}else mon.toxicCounter=0;
+ mon.statusTurns=0;
+ mon.volatile={};
+ mon.leechSeed=null;
+}
 function onSwitchIn(mon){mon.volatile=mon.volatile||{};}
 
-function applyStatus(mon,status){if(mon.status&&status!=='confusion')return false;if(['poison','toxic'].includes(status)&&mon.types.includes('poison'))return false;if(status==='par'&&mon.types.includes('electric'))return false;if(status==='burn'&&mon.types.includes('fire'))return false;if(status==='freeze'&&mon.types.includes('ice'))return false;if(status==='sleep'){mon.status='sleep';mon.statusTurns=2+randomInt(3);}else if(status==='confusion'){mon.status='confusion';mon.statusTurns=2+randomInt(3);}else mon.status=status;if(status==='toxic')mon.toxicCounter=1;return true;}
-function critThreshold(att,mv){
+function applyStatus(mon,status,{secondary=false,moveType=null}={}){
+ if(mon.status&&status!=='confusion')return false;
+ if(status==='confusion'&&mon.status==='confusion')return false;
+ // Gen I same-type immunity applies to major-status secondary effects from damaging moves.
+ if(secondary&&moveType&&mon.types.includes(moveType)&&['par','burn','freeze','poison','toxic'].includes(status))return false;
+ if(['poison','toxic'].includes(status)&&mon.types.includes('poison'))return false;
+ if(status==='burn'&&mon.types.includes('fire'))return false;
+ if(status==='freeze'&&mon.types.includes('ice'))return false;
+ if(status==='sleep'){mon.status='sleep';mon.statusTurns=randomInt(7);}
+ else if(status==='confusion'){mon.status='confusion';mon.statusTurns=1+randomInt(4);}
+ else mon.status=status;
+ if(status==='toxic')mon.toxicCounter=1;
+ return true;
+}
+function critChance(att,mv){
   const base=Math.max(1,Number(att.baseSpeed)||1);
-  // RBY uses Base Speed, not current Speed. High-crit moves use an 8x rate.
   const high=!!STATUS_MOVES[mv.id]?.crit;
-  return Math.min(255, high ? base*4 : Math.floor(base/2));
+  const focus=!!att.volatile?.focusEnergy;
+  const mult=high?8:(focus?4:1);
+  return Math.min(1,(base*100/512/100)*mult);
 }
-function rollRby256(threshold){return randomInt(256)<Math.max(0,Math.min(255,threshold));}
+function rollCrit(att,mv){return Math.random()<critChance(att,mv);}
 function damage(att,def,mv){
-  const e=typeMult(mv,def);
-  if(e===0||!mv.power)return{dmg:0,e,crit:false};
-  const physical=PHYSICAL.has(mv.type), atkKey=physical?'atk':'spc', defKey=physical?'def':'spc';
-  const crit=rollRby256(critThreshold(att,mv));
-  // In RBY critical hits ignore all stat stages, burn's Attack penalty,
-  // Reflect/Light Screen, and use double level in the damage formula.
-  const level=crit?Math.min(100,LEVEL*2):LEVEL;
-  let A=crit?att.max[atkKey]:effectiveStat(att,atkKey);
-  let D=crit?def.max[defKey]:Math.max(1,effectiveStat(def,defKey));
-  if(!crit && (mv.id==='self-destruct'||mv.id==='explosion'))D=Math.max(1,Math.floor(D/2));
-  // RBY Reflect/Light Screen halve the corresponding damage, and crits ignore them.
-  const screen=!crit && (physical?def.volatile?.reflect:def.volatile?.lightScreen);
-  let base=Math.floor(Math.floor(Math.floor((2*level/5+2)*mv.power*A/D)/50)+2);
-  if(screen)base=Math.floor(base/2);
-  const stab=att.types.includes(mv.type)?1.5:1;
-  const rand=(217+randomInt(39))/255;
-  let dmg=Math.floor(base*stab*e*rand);
-  if(dmg<1&&e>0)dmg=1;
-  return{dmg,e,crit};
+ const e=typeMult(mv,def);
+ if(e===0||!mv.power)return{dmg:0,e,crit:false,sub:false};
+ const physical=PHYSICAL.has(mv.type), atkKey=physical?'atk':'spc', defKey=physical?'def':'spc';
+ const crit=rollCrit(att,mv);
+ const level=crit?Math.min(100,LEVEL*2):LEVEL;
+ let A=crit?att.max[atkKey]:effectiveStat(att,atkKey);
+ let D=crit?def.max[defKey]:Math.max(1,effectiveStat(def,defKey));
+ if(!crit && (mv.id==='self-destruct'||mv.id==='explosion'))D=Math.max(1,Math.floor(D/2));
+ // Clean rules: clamp calculation stats to the cartridge byte range without the
+ // old overflow/quartering glitch.
+ A=Math.min(255,Math.max(1,A)); D=Math.min(255,Math.max(1,D));
+ const screen=!crit && (physical?def.volatile?.reflect:def.volatile?.lightScreen);
+ if(screen)D=D*2;
+ let base=Math.floor((Math.floor((Math.floor((2*level)/5)+2)*mv.power*A/D)/50));
+ base=Math.min(997,base)+2;
+ if(base<1)return{dmg:0,e,crit};
+ if(att.types.includes(mv.type))base+=Math.floor(base/2);
+ if(e===0)return{dmg:0,e,crit};
+ for(const t of def.types){const mult=effect(mv.type,t);base=Math.floor(base*mult);if(base<=0)return{dmg:0,e:0,crit};}
+ const rand=base===1?1:217+randomInt(39);
+ const dmg=Math.max(1,Math.floor(base*rand/255));
+ return{dmg,e,crit,sub:!!def.volatile?.substitute};
 }
-function canAct(mon,log){if(mon.volatile?.recharge){mon.volatile.recharge=false;log(`${mon.displayName} must recharge.`);return false;}if(mon.volatile?.flinch){mon.volatile.flinch=false;log(`${mon.displayName} flinched.`);return false;}if(mon.status==='sleep'){if(mon.statusTurns>0){mon.statusTurns--;log(`${mon.displayName} is asleep.`);return false;}mon.status=null;log(`${mon.displayName} woke up!`);}if(mon.status==='par'&&Math.random()<.25){log(`${mon.displayName} is fully paralyzed.`);return false;}if(mon.status==='freeze'){if(Math.random()<.2){mon.status=null;log(`${mon.displayName} thawed out!`);}else{log(`${mon.displayName} is frozen solid.`);return false;}}if(mon.status==='confusion'){if(mon.statusTurns>0){mon.statusTurns--;if(Math.random()<.5){const self=Math.max(1,Math.floor((Math.floor(2*LEVEL/5+2)*40*effectiveStat(mon,'atk')/Math.max(1,effectiveStat(mon,'def'))/50)+2));mon.hp=Math.max(0,mon.hp-self);log(`${mon.displayName} hurt itself in confusion!`);return false;}}else{mon.status=null;log(`${mon.displayName} snapped out of confusion!`);}}return true;}
-function endTurn(mon,log){if(mon.status==='poison'){const d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);log(`${mon.displayName} took ${d} poison damage.`);}else if(mon.status==='toxic'){const d=Math.max(1,Math.floor(mon.max.hp/16))*Math.max(1,mon.toxicCounter||1);mon.hp=Math.max(0,mon.hp-d);mon.toxicCounter=(mon.toxicCounter||1)+1;log(`${mon.displayName} took ${d} toxic damage.`);}if(mon.leechSeed&&mon.hp>0){const d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);if(mon.leechSeed.hp>0)mon.leechSeed.hp=Math.min(mon.leechSeed.max.hp,mon.leechSeed.hp+d);log(`${mon.displayName} lost ${d} HP to Leech Seed.`);}}
+function canAct(mon,log){
+ if(mon.volatile?.recharge){mon.volatile.recharge=false;log(`${mon.displayName} must recharge.`);return false;}
+ if(mon.volatile?.flinch){mon.volatile.flinch=false;log(`${mon.displayName} flinched.`);return false;}
+ if(mon.status==='sleep'){
+   if(mon.statusTurns>0){mon.statusTurns--;log(`${mon.displayName} is asleep.`);return false;}
+   mon.status=null;log(`${mon.displayName} woke up!`);return false;
+ }
+ if(mon.status==='par'&&Math.random()<.25){log(`${mon.displayName} is fully paralyzed.`);return false;}
+ if(mon.status==='freeze'){log(`${mon.displayName} is frozen solid.`);return false;}
+ if(mon.status==='confusion'){
+   if(mon.statusTurns>0){
+     mon.statusTurns--;
+     if(Math.random()<.5){
+       const A=effectiveStat(mon,'atk'),D=effectiveStat(mon,'def');
+       const self=Math.max(1,Math.floor((Math.floor((Math.floor((2*LEVEL)/5)+2)*40*A/D)/50))+2);
+       mon.hp=Math.max(0,mon.hp-self);log(`${mon.displayName} hurt itself in confusion!`);return false;
+     }
+   }else{mon.status=null;log(`${mon.displayName} snapped out of confusion!`);}
+ }
+ return true;
+}
+function endTurn(mon,log,seedTarget=null){
+ if(mon.hp<=0)return;
+ let d=0;
+ if(mon.status==='poison'){d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);log(`${mon.displayName} took ${d} poison damage.`);}
+ else if(mon.status==='toxic'){d=Math.max(1,Math.floor(mon.max.hp/16))*Math.max(1,mon.toxicCounter||1);mon.hp=Math.max(0,mon.hp-d);mon.toxicCounter=(mon.toxicCounter||1)+1;log(`${mon.displayName} took ${d} toxic damage.`);}
+ else if(mon.status==='burn'){d=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-d);log(`${mon.displayName} took ${d} burn damage.`);}
+ if(mon.hp>0&&mon.leechSeed&&seedTarget&&seedTarget.hp>0){const sd=Math.max(1,Math.floor(mon.max.hp/16));mon.hp=Math.max(0,mon.hp-sd);seedTarget.hp=Math.min(seedTarget.max.hp,seedTarget.hp+sd);log(`${mon.displayName} lost ${sd} HP to Leech Seed.`);}
+}
 function resolveMove(att,def,mv,log){
- if(!mv||att.hp<=0)return {used:false,damage:0};
- if(!canAct(att,log))return {used:false,damage:0};
- if(att.pp[mv.id]<=0){log(`${moveLabel(mv.id)} has no PP!`);return {used:false,damage:0};}
+ if(!mv||att.hp<=0)return{used:false,damage:0};
+ if(!canAct(att,log))return{used:false,damage:0};
+ if(att.pp[mv.id]<=0){log(`${moveLabel(mv.id)} has no PP!`);return{used:false,damage:0};}
  att.pp[mv.id]--;
  const spec=STATUS_MOVES[mv.id]||{};
- if(!mv.ohko){const acc=clamp(mv.accuracy*accuracyMultiplier(att,def),1,100);const hitThreshold=Math.min(255,Math.floor(acc*256/100));if(mv.id!=='swift'&&randomInt(256)>=hitThreshold){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return {used:true,damage:0,miss:true};}}
-
- const secondaryList=Array.isArray(mv.secondary)?mv.secondary:(mv.secondary?[mv.secondary]:[]);
- if(spec.status&&Math.random()*100<=(spec.chance??100)){if(applyStatus(def,spec.status))log(`${def.displayName} is ${spec.status==='par'?'paralyzed':spec.status==='sleep'?'asleep':spec.status==='confusion'?'confused':spec.status==='freeze'?'frozen':spec.status==='burn'?'burned':spec.status==='toxic'?'badly poisoned':'poisoned'}!`);}
- for(const sec of secondaryList){if(!sec)continue;const chance=sec.chance??100;if(Math.random()*100>chance)continue;if(sec.status&&applyStatus(def,sec.status))log(`${def.displayName} was afflicted with ${sec.status}.`);if(sec.volatileStatus==='flinch'&&def.hp>0)def.volatile.flinch=true;if(sec.boosts){for(const [key,val] of Object.entries(sec.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}}
- if(mv.boosts){for(const [key,val] of Object.entries(mv.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}
- if(spec.boost){const target=spec.boost.startsWith('foe')?def:att;const key=spec.boost.replace('foe','');target.boosts[key]=clamp((target.boosts[key]||0)+spec.amount,-6,6);log(`${att.displayName}'s ${key} ${spec.amount>0?'rose':'fell'}.`);}
+ // Clean, deterministic versions of awkward Gen I moves: no cartridge desync/lock bugs.
+ if(mv.id==='bide'){
+   if(!att.volatile.bide){att.volatile.bide={turns:2,damage:0};log(`${att.displayName} began Bide.`);return{used:true,damage:0};}
+   att.volatile.bide.turns--;
+   if(att.volatile.bide.turns>0){log(`${att.displayName} is holding its attack.`);return{used:true,damage:0};}
+   const dealt=Math.min(def.hp,Math.max(1,att.volatile.bide.damage*2));
+   def.hp=Math.max(0,def.hp-dealt);att.volatile.bide=null;log(`${att.displayName} unleashed Bide for ${dealt} damage.`);return{used:true,damage:dealt};
+ }
+ const acc=mv.ohko?100:clamp(mv.accuracy*accuracyMultiplier(att,def),1,100);
+ if(mv.id!=='swift'&&!mv.ohko&&Math.random()*100>=acc){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return{used:true,damage:0,miss:true};}
+ // Direct status / utility effects occur after the move's accuracy check.
  if(spec.heal){const healed=Math.min(att.max.hp-att.hp,Math.floor(att.max.hp*(spec.heal/100)));if(healed>0){att.hp+=healed;log(`${att.displayName} recovered ${healed} HP.`);}}
- if(mv.id==='rest'&&att.hp>0){att.hp=att.max.hp;att.status='sleep';att.statusTurns=2+randomInt(3);log(`${att.displayName} fully healed and fell asleep.`);}
- if(spec.volatile==='haze'){att.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};def.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};log('All stat changes were reset.');}
- if(spec.volatile==='leech-seed'){if(!['grass'].some(t=>def.types.includes(t))){def.leechSeed=att;log(`${def.displayName} was seeded.`);}}
- if(spec.volatile==='substitute'){const cost=Math.floor(att.max.hp/4);if(att.hp>cost){att.hp-=cost;att.volatile.substitute=Math.max(1,Math.floor(att.max.hp/4));log(`${att.displayName} created a Substitute.`);}else log(`${att.displayName} could not make a Substitute.`);}
- if(spec.volatile==='reflect')att.volatile.reflect=5;
- if(spec.volatile==='light-screen')att.volatile.lightScreen=5;
+ if(mv.id==='rest'){
+   if(att.hp===att.max.hp){log(`${att.displayName} couldn't use Rest at full HP.`);return{used:true,damage:0};}
+   att.hp=att.max.hp;att.status='sleep';att.statusTurns=2;att.toxicCounter=0;log(`${att.displayName} fully healed and fell asleep.`);return{used:true,damage:0};
+ }
+ if(spec.boost){const target=spec.boost.startsWith('foe')?def:att;const key=spec.boost.replace('foe','');const before=target.boosts[key]||0;target.boosts[key]=clamp(before+spec.amount,-6,6);if(target.boosts[key]!==before)log(`${target.displayName}'s ${key} ${spec.amount>0?'rose':'fell'}.`);}
+ if(mv.boosts){for(const [key,val] of Object.entries(mv.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');const before=target.boosts[stat]||0;target.boosts[stat]=clamp(before+val,-6,6);if(target.boosts[stat]!==before)log(`${target.displayName}'s ${stat} ${val>0?'rose':'fell'}.`);}}
+ if(spec.volatile==='reflect')att.volatile.reflect=true;
+ if(spec.volatile==='light-screen')att.volatile.lightScreen=true;
  if(spec.volatile==='focus-energy')att.volatile.focusEnergy=true;
  if(spec.volatile==='mist')att.volatile.mist=true;
- if(spec.selfdestruct){att.hp=0;log(`${att.displayName} fainted from the explosion.`);return {used:true,damage:0};}
- if(spec.forceSwitch){log(`${att.displayName} used ${moveLabel(mv.id)}.`);return {used:true,forceSwitch:true,damage:0};}
- if(spec.recharge)att.volatile.recharge=true;
- if(mv.ohko){const hitChance=clamp(30+LEVEL-LEVEL,1,100);if(Math.random()*100<hitChance){def.hp=0;log(`${att.displayName} used ${moveLabel(mv.id)} — OHKO!`);}else log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return {used:true,damage:0};}
- if(mv.damage){const fixed=mv.damage==='level'?LEVEL:Number(mv.damage);if(Number.isFinite(fixed)&&fixed>0){const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage with ${moveLabel(mv.id)}.`);return {used:true,damage:dealt};}}
- if(mv.id==='dragon-rage'||mv.id==='sonic-boom'){const fixed=mv.id==='dragon-rage'?40:20;const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return {used:true,damage:dealt};}
- if(mv.id==='seismic-toss'||mv.id==='night-shade'){const dealt=Math.min(def.hp,LEVEL);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return {used:true,damage:dealt};}
- if(mv.id==='super-fang'){const dealt=Math.min(def.hp,Math.max(1,Math.floor(def.hp/2)));def.hp-=dealt;log(`${att.displayName} used Super Fang for ${dealt} damage.`);return {used:true,damage:dealt};}
- if(spec.charge){if(att.volatile.charge!==mv.id){att.volatile.charge=mv.id;log(`${att.displayName} began charging ${moveLabel(mv.id)}.`);return {used:true,charging:true};}att.volatile.charge=null;
+ if(spec.volatile==='substitute'){
+   const cost=Math.floor(att.max.hp/4);
+   if(att.volatile.substitute){log(`${att.displayName} already has a Substitute.`);return{used:true,damage:0};}
+   if(att.hp<=cost){log(`${att.displayName} couldn't make a Substitute.`);if(att.hp===cost){att.hp=0;log(`${att.displayName} fainted!`);}return{used:true,damage:0};}
+   att.hp-=cost;att.volatile.substitute=cost+1;log(`${att.displayName} created a Substitute.`);return{used:true,damage:0};
  }
- if(mv.power){let total=0;const hits=mv.multihit?(Array.isArray(mv.multihit)?mv.multihit[0]+randomInt(Math.max(1,mv.multihit[1]-mv.multihit[0]+1)):mv.multihit):1;for(let i=0;i<hits&&def.hp>0;i++){const r=damage(att,def,mv);let dealt=Math.min(def.hp,r.dmg);def.hp=Math.max(0,def.hp-dealt);total+=dealt;if(r.crit)log(`${att.displayName} landed a CRITICAL HIT!`);if(r.e===0)log('It had no effect.');else if(r.e>1)log('It was super effective!');else if(r.e<1)log('It was not very effective.');if(dealt)log(`${att.displayName} dealt ${dealt} damage with ${moveLabel(mv.id)}.`);if(spec.drain&&dealt)att.hp=Math.min(att.max.hp,att.hp+Math.max(1,Math.floor(dealt*spec.drain)));if(spec.recoil&&dealt)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(dealt*spec.recoil)));}
- if(spec.flinch&&def.hp>0&&Math.random()*100<spec.flinch)def.volatile.flinch=true;
- return {used:true,damage:total};}
- log(`${att.displayName} used ${moveLabel(mv.id)}.`);return {used:true,damage:0};
+ if(spec.volatile==='haze'){
+   att.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};def.boosts={atk:0,def:0,spe:0,spc:0,acc:0,evasion:0};
+   if(def.status&&def.status!=='confusion')def.status=null;
+   def.toxicCounter=0;log('Haze reset the battle state changes.');return{used:true,damage:0};
+ }
+ if(spec.volatile==='leech-seed'){if(!def.types.includes('grass')){def.leechSeed=true;log(`${def.displayName} was seeded.`);}return{used:true,damage:0};}
+ if(spec.volatile==='forceSwitch')return{used:true,forceSwitch:true,damage:0};
+ if(spec.forceSwitch){log(`${att.displayName} used ${moveLabel(mv.id)}.`);return{used:true,forceSwitch:true,damage:0};}
+ if(mv.ohko){const targetLevel=LEVEL;const chance=Math.max(0,LEVEL-targetLevel+76);const speedOk=effectiveStat(att,'spe')>=effectiveStat(def,'spe');if(!speedOk||randomInt(256)>=Math.min(255,chance)){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return{used:true,damage:0,miss:true};}def.hp=0;log(`${att.displayName} used ${moveLabel(mv.id)} — OHKO!`);return{used:true,damage:def.max.hp};}
+ if(mv.damage){const fixed=mv.damage==='level'?LEVEL:Number(mv.damage);if(Number.isFinite(fixed)&&fixed>0){const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage with ${moveLabel(mv.id)}.`);return{used:true,damage:dealt};}}
+ if(mv.id==='dragon-rage'||mv.id==='sonic-boom'){
+   if(typeMult(mv,def)===0){log('It had no effect.');return{used:true,damage:0};}
+   const fixed=mv.id==='dragon-rage'?40:20;const dealt=Math.min(def.hp,fixed);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return{used:true,damage:dealt};
+ }
+ if(mv.id==='seismic-toss'||mv.id==='night-shade'){const dealt=Math.min(def.hp,LEVEL);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} dealt ${dealt} fixed damage.`);return{used:true,damage:dealt};}
+ if(mv.id==='super-fang'){
+   if(typeMult(mv,def)===0){log('It had no effect.');return{used:true,damage:0};}
+   const dealt=Math.min(def.hp,Math.max(1,Math.floor(def.hp/2)));def.hp-=dealt;log(`${att.displayName} used Super Fang for ${dealt} damage.`);return{used:true,damage:dealt};
+ }
+ if(spec.charge){if(att.volatile.charge!==mv.id){att.volatile.charge=mv.id;log(`${att.displayName} began charging ${moveLabel(mv.id)}.`);return{used:true,charging:true};}att.volatile.charge=null;}
+ if(!mv.power){log(`${att.displayName} used ${moveLabel(mv.id)}.`);return{used:true,damage:0};}
+ let total=0;let brokeSub=false;
+ const hits=mv.multihit?(Array.isArray(mv.multihit)?mv.multihit[0]+randomInt(Math.max(1,mv.multihit[1]-mv.multihit[0]+1)):mv.multihit):1;
+ let firstRoll=null;
+ for(let i=0;i<hits&&def.hp>0;i++){
+   const r=firstRoll||damage(att,def,mv);if(!firstRoll)firstRoll=r;
+   let dealt=r.dmg;
+   if(def.volatile.substitute){const before=def.volatile.substitute;def.volatile.substitute=Math.max(0,before-dealt);dealt=Math.min(before,r.dmg);if(def.volatile.substitute===0){delete def.volatile.substitute;brokeSub=true;log(`${def.displayName}'s Substitute broke!`);}}
+   else {dealt=Math.min(def.hp,r.dmg);def.hp=Math.max(0,def.hp-dealt);}
+   if(def.volatile?.bide)def.volatile.bide.damage=(def.volatile.bide.damage||0)+dealt;
+   total+=dealt;
+   if(r.crit)log(`${att.displayName} landed a CRITICAL HIT!`);
+   if(r.e===0)log('It had no effect.');else if(r.e>1)log('It was super effective!');else if(r.e<1)log('It was not very effective.');
+   if(dealt)log(`${att.displayName} dealt ${dealt} damage with ${moveLabel(mv.id)}.`);
+   if(brokeSub)break;
+ }
+ if(mv.id==='rage'&&total>0){att.boosts.atk=clamp((att.boosts.atk||0)+1,-6,6);log(`${att.displayName}'s Rage raised its Attack.`);}
+ // Gen I secondary effects happen after damage and do not occur when the target faints.
+ if(def.hp>0&&!def.volatile.substitute){
+   const secondaryList=Array.isArray(mv.secondary)?mv.secondary:(mv.secondary?[mv.secondary]:[]);
+   for(const sec of secondaryList){if(!sec)continue;const chance=sec.chance??100;if(Math.random()*100>chance)continue;if(sec.status&&applyStatus(def,sec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} was afflicted with ${sec.status}.`);if(sec.volatileStatus==='flinch'&&def.hp>0)def.volatile.flinch=true;if(sec.boosts){for(const [key,val] of Object.entries(sec.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}}
+   if(spec.status&&Math.random()*100<=(spec.chance??100)&&applyStatus(def,spec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} is ${spec.status}!`);
+   if(spec.flinch&&Math.random()*100<spec.flinch)def.volatile.flinch=true;
+ }
+ if(spec.drain&&total&&!brokeSub)att.hp=Math.min(att.max.hp,att.hp+Math.max(1,Math.floor(total*spec.drain)));
+ if(spec.recoil&&total&&!brokeSub)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(total*spec.recoil)));
+ if(spec.recharge&&def.hp>0&&!brokeSub)att.volatile.recharge=true;
+ if(spec.selfdestruct&&!(brokeSub)){att.hp=0;log(`${att.displayName} fainted from the explosion.`);}
+ return{used:true,damage:total,forceSwitch:false};
 }
 function chooseEnemyMove(mon){const usable=mon.moves.filter(m=>mon.pp[m.id]>0);return usable.length?usable[randomInt(usable.length)]:mon.moves[0];}
 function legalSwitch(team,index,activeIndex){return Number.isInteger(index)&&index>=0&&index<team.length&&index!==activeIndex&&team[index].hp>0;}
@@ -266,7 +375,6 @@ function resolveLocalAction(action){
  const b=S.battle;if(b.over)return;
  if(b.waitingSwitch){if(action.type!=='switch'||!legalSwitch(b.my,action.index,b.mi))return;const old=b.mi;onSwitchOut(b.my[old]);b.mi=action.index;b.waitingSwitch=false;onSwitchIn(b.my[b.mi]);b.log.push(`You sent out ${b.my[b.mi].displayName}.`);render();return;}
  const a=active('my'),d=active('foe');
- let enemyAction={type:'move',index:chooseEnemyMove(d)?.id};
  const mySwitch=action.type==='switch';
  if(mySwitch&&!legalSwitch(b.my,action.index,b.mi))return;
  b.log.push(`Turn ${b.turn}`);
@@ -285,8 +393,10 @@ function resolveLocalAction(action){
      if(a.hp>0)resolveMove(a,d,mv,b.log.push.bind(b.log));
    }
  }
- endTurn(a,b.log.push.bind(b.log));endTurn(d,b.log.push.bind(b.log));
- finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);b.turn++;render();
+ // In RBY, if a Pokémon faints, the turn ends immediately and residual effects are skipped.
+ finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);
+ if(!b.over){endTurn(a,b.log.push.bind(b.log),d);endTurn(d,b.log.push.bind(b.log),a);finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);}
+ b.turn++;render();
 }
 function doTurn(idx){resolveLocalAction({type:'move',index:idx});}
 function manualSwitch(index){resolveLocalAction({type:'switch',index});}
@@ -313,10 +423,10 @@ async function maybeResolveOnline(roomId){
  const o=S.online;if(!o||o.role!=='host')return;
  const {data:room,error}=await o.sb.from('pvp_rooms').select('*').eq('id',roomId).single();if(error)throw error;
  const st=room.battle_state||{};if(room.status!=='battle'||st.result)return;
- const {error:lockError}=await o.sb.from('pvp_turn_locks').insert({room_id:roomId,turn:st.turn});if(lockError){if(lockError.code==='23505')return;throw lockError;}
  const {data:acts,error:ae}=await o.sb.from('pvp_actions').select('*').eq('room_id',roomId).eq('turn',st.turn).order('created_at');if(ae)throw ae;
  const byRole={};for(const x of acts||[]){const role=x.player_id===room.host_id?'host':x.player_id===room.guest_id?'guest':null;if(role&&!byRole[role])byRole[role]=x.action;}
  if(!byRole.host||!byRole.guest)return;
+ const {error:lockError}=await o.sb.from('pvp_turn_locks').insert({room_id:roomId,turn:st.turn});if(lockError){if(lockError.code==='23505')return;throw lockError;}
  const host=hydrateBattleTeam(st.hostBattle||st.hostTeam),guest=hydrateBattleTeam(st.guestBattle||st.guestTeam);let hi=st.hostIndex??0,gi=st.guestIndex??0;
  const h=host[hi],g=guest[gi],log=[...(st.log||[]),`Turn ${st.turn}`];
  const hostForced=h.hp<=0,guestForced=g.hp<=0;
@@ -346,12 +456,28 @@ async function maybeResolveOnline(roomId){
      else{resolveMove(d,a,gm,log.push.bind(log));if(a.hp>0)resolveMove(a,d,hm,log.push.bind(log));}
    }
  }
+ // RBY ends the turn immediately on a KO; otherwise apply residual effects.
+ if(host.every(x=>x.hp<=0)){} else if(guest.every(x=>x.hp<=0)){}
+ else {
+   endTurn(host[hi],log.push.bind(log),guest[gi]);
+   endTurn(guest[gi],log.push.bind(log),host[hi]);
+ }
  let result=null;if(host.every(x=>x.hp<=0))result='guest';else if(guest.every(x=>x.hp<=0))result='host';
  const next={...st,turn:st.turn+1,result,hostIndex:hi,guestIndex:gi,hostBattle:host.map(serializeMon),guestBattle:guest.map(serializeMon),log};
  const {error:ue}=await o.sb.from('pvp_rooms').update({battle_state:next,status:result?'finished':'battle'}).eq('id',roomId);if(ue)throw ue;
  await o.sb.from('pvp_actions').delete().eq('room_id',roomId).eq('turn',st.turn);
 }
-async function leaveOnline(){const o=S.online;if(!o)return;await o.sb.from('pvp_rooms').delete().eq('id',o.roomId);S.online=null;S.battle=null;nav('home');}
+async function leaveOnline(){
+ const o=S.online;if(!o)return;
+ try{
+   const {data:room}=await o.sb.from('pvp_rooms').select('*').eq('id',o.roomId).single();
+   if(room){
+     const st={...(room.battle_state||{}),result:o.role==='host'?'guest':'host',forfeit:o.role,log:[...(room.battle_state?.log||[]),`${o.role==='host'?'Player 1':'Player 2'} forfeited.`]};
+     await o.sb.from('pvp_rooms').update({battle_state:st,status:'finished'}).eq('id',o.roomId);
+   }
+ }catch{}
+ S.online=null;S.battle=null;nav('home');
+}
 
 function nav(p){S.page=p;render();}
 function render(){if(!S.ready){app.innerHTML=S.error?`<section class="hero"><h1>Data load failed.</h1><p class="muted">${esc(S.error.message)}</p><button class="btn primary" id="retry">RETRY</button></section>`:`<section class="hero"><div class="brand">LOADING VERIFIED GEN I DATA…</div><h1>Preparing the <span>Kanto roster</span></h1><p class="muted">Loading 151 Pokémon, Gen I stats/types/moves and legal learnsets.</p></section>`;return;}if(S.page==='home')home();else if(S.page==='team')teamPage();else battlePage();}
