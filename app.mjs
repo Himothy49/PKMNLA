@@ -26,11 +26,14 @@ const STATUS_MOVES={
 };
 
 const RECOIL_MOVES=new Set(['take-down','double-edge','submission','high-jump-kick','jump-kick','struggle']);
-const S={page:'home',ready:false,error:null,dex:null,gen:null,mons:[],byId:new Map(),selected:null,team:[],moves:new Map(),movePool:new Map(),search:'',type:'',sort:'id',battle:null,online:null};
+const S={page:'home',ready:false,error:null,dex:null,gen:null,mons:[],byId:new Map(),selected:null,team:[],moves:new Map(),movePool:new Map(),moveAliases:new Map(),moveRecords:new Map(),moveNames:new Map(),search:'',type:'',sort:'id',battle:null,online:null};
 const app=document.querySelector('#app');
 const cap=s=>String(s).split('-').map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' ');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const moveLabel=id=>cap(id.replace(/-/g,' '));
+const compactMoveId=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const kebabMoveId=s=>String(s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const canonicalMoveId=id=>S.moveAliases.get(compactMoveId(id))||kebabMoveId(id);
+const moveLabel=id=>S.moveNames.get(canonicalMoveId(id))||cap(canonicalMoveId(id));
 const effect=(type,target)=>(TYPE_CHART[type]||{})[target]??1;
 const typeMult=(move,target)=>target.types.reduce((m,t)=>m*effect(move.type,t),1);
 const stage=n=>n>=0?(2+n)/2:2/(2-n);
@@ -49,7 +52,7 @@ async function validateGen1(){
    if(ls.length<4)throw Error(`${mon.displayName} has fewer than four legal Gen I moves.`);
    const pool=new Set(ls);
    const picks=RECOMMENDED[mon.id]||[];
-   for(const id of picks)if(!pool.has(id))throw Error(`Recommended moveset error: ${mon.displayName} cannot legally learn ${moveLabel(id)} in Gen I.`);
+   for(const id of picks){const cid=canonicalMoveId(id);if(!pool.has(cid))throw Error(`Recommended moveset error: ${mon.displayName} cannot legally learn ${moveLabel(id)} in Gen I.`);} 
    const rec=recommendedMoves(mon);
    if(rec.length!==4||new Set(rec).size!==4)throw Error(`Recommended moveset error: ${mon.displayName} does not have exactly four valid moves.`);
  }
@@ -60,6 +63,8 @@ async function loadData(){
  try{
   if(!window.pkmn?.dex?.Dex||!window.pkmn?.data?.Generations)throw Error('Gen I data library failed to load. Refresh once if this happens.');
   S.dex=pkmn.dex.Dex.forGen(1);S.gen=new pkmn.data.Generations(pkmn.dex.Dex).get(1);
+  S.moveAliases.clear();S.moveRecords.clear();S.moveNames.clear();
+  for(const mv of S.gen.moves){const cid=kebabMoveId(mv.name||mv.id);S.moveRecords.set(cid,mv);S.moveNames.set(cid,mv.name||cap(cid));S.moveAliases.set(compactMoveId(mv.id||mv.name),cid);S.moveAliases.set(compactMoveId(mv.name),cid);S.moveAliases.set(compactMoveId(cid),cid);}
   const arr=[];
   for(const sp of S.gen.species){if(!sp.num||sp.num>151||sp.isNonstandard)continue;arr.push({id:sp.num,name:sp.name.toLowerCase(),displayName:sp.name,types:sp.types.map(x=>x.toLowerCase()),baseStats:{hp:sp.baseStats.hp,atk:sp.baseStats.atk,def:sp.baseStats.def,spe:sp.baseStats.spe,spc:sp.baseStats.spc},sprite:SPRITE(sp.num),art:ART(sp.num),species:sp});}
   arr.sort((a,b)=>a.id-b.id);S.mons=arr;arr.forEach(m=>S.byId.set(m.id,m));
@@ -72,35 +77,29 @@ async function learnset(mon){
  if(mon.learned)return mon.learned;
  const out=new Set();
  const speciesName=mon.displayName;
- // Browser-authoritative Gen I learnset: one async load per species instead of
- // 151 x 165 individual legality calls. This avoids startup timeouts and uses
- // the actual Red/Blue source tags (all sources beginning with "1").
  try{
    const raw=await S.dex.getLearnsets(speciesName);
    const table=raw?.learnset||{};
    for(const [id,sources] of Object.entries(table)){
-     if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(id);
+     if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(canonicalMoveId(id));
    }
  }catch(err){
-   // Fallback for a partially loaded learnset bundle.
    for(const mv of S.gen.moves){
-     const id=mv.id||String(mv.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
-     const name=mv.name||id;
-     try{if(await S.gen.learnsets.canLearn(speciesName,name))out.add(id);}catch{}
+     const cid=canonicalMoveId(mv.id||mv.name);const name=mv.name||cid;
+     try{if(await S.gen.learnsets.canLearn(speciesName,name))out.add(cid);}catch{}
    }
  }
  mon.learned=[...out].filter(id=>moveData(id)).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
  if(mon.learned.length<4)throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves. The Red/Blue learnset bundle did not load correctly.`);
  return mon.learned;
 }
-function moveData(id){const m=S.gen.moves.get(id);if(!m||m.exists===false)return null;const type=GEN1_MOVE_TYPE_OVERRIDES[id]||(m.type||'Normal').toLowerCase();const secondary=m.secondary||null;return{id,name:id,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1,priority:m.priority||0,multihit:m.multihit||null,drain:m.drain||0,recoil:m.recoil||0,ohko:!!m.ohko,damage:m.damage||null,status:m.status||null,volatileStatus:m.volatileStatus||null,boosts:m.boosts||null,flinch:m.flinch||0,secondary};}
-function maxStats(mon){const bs=mon.baseStats,dv=15,exp=65535,bonus=Math.floor(Math.sqrt(exp)/4);return{hp:Math.floor((((bs.hp+dv)*2+bonus)*LEVEL)/100)+LEVEL+10,atk:Math.floor((((bs.atk+dv)*2+bonus)*LEVEL)/100)+5,def:Math.floor((((bs.def+dv)*2+bonus)*LEVEL)/100)+5,spe:Math.floor((((bs.spe+dv)*2+bonus)*LEVEL)/100)+5,spc:Math.floor((((bs.spc+dv)*2+bonus)*LEVEL)/100)+5};}
-function legalMoves(mon){return[...(mon.learned||[])].map(moveData).filter(Boolean);}
-async function ensureMoves(mon){
-  const list=await learnset(mon);
-  const data=list.map(moveData).filter(Boolean);
-  S.movePool.set(mon.id,data);
-  return data;
+function moveData(id){
+ const cid=canonicalMoveId(id);const m=S.moveRecords.get(cid);
+ if(!m||m.exists===false)return null;
+ const key=compactMoveId(cid);let override;
+ for(const [k,v] of Object.entries(GEN1_MOVE_TYPE_OVERRIDES)){if(compactMoveId(k)===key){override=v;break;}}
+ const type=(override||(m.type||'Normal')).toLowerCase();const secondary=m.secondary||null;
+ return{id:cid,name:cid,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1,priority:m.priority||0,multihit:m.multihit||null,drain:m.drain||0,recoil:m.recoil||0,ohko:!!m.ohko,damage:m.damage||null,status:m.status||null,volatileStatus:m.volatileStatus||null,boosts:m.boosts||null,flinch:m.flinch||0,secondary};
 }
 const RECOMMENDED={
   // Representative RBY OU sets. Every entry is still checked against the
@@ -171,7 +170,7 @@ function scoreRecommended(mon,m){
 function recommendedMoves(mon){
   const pool=S.movePool.get(mon.id)||legalMoves(mon); const byId=new Map(pool.map(m=>[m.id,m]));
   const picked=[];
-  for(const id of (RECOMMENDED[mon.id]||[])){const m=byId.get(id);if(m&&!picked.some(x=>x.id===m.id))picked.push(m);}
+  for(const id of (RECOMMENDED[mon.id]||[])){const m=byId.get(canonicalMoveId(id));if(m&&!picked.some(x=>x.id===m.id))picked.push(m);}
   const rest=pool.filter(m=>!picked.some(x=>x.id===m.id)).sort((a,b)=>scoreRecommended(mon,b)-scoreRecommended(mon,a));
   while(picked.length<4&&rest.length)picked.push(rest.shift());
   return picked.slice(0,4).map(m=>m.id);

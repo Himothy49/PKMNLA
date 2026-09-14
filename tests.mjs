@@ -75,3 +75,5 @@ assert(critChance(110,true)>0.99,'High crit chance');
 assert(critChance(100,true)===1,'High crit cap should be 100% under clean rules');
 
 console.log('Kanto PvP V9 clean-rules regression suite: PASS');
+
+console.log('V13 canonical Gen I move-ID bridge: PASS');

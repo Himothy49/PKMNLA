@@ -70,3 +70,6 @@ V11 diagnostics/fixes: one raw Gen I learnset load per species, no duplicated se
 
 
 V12 adds clean implementations for Counter, Conversion, Transform, Disable, Mimic, Psywave, Metronome, and partial trapping; tracks last-hit data for Counter; prevents disabled moves; and records state cleanly across switches.
+
+
+V13: fixed the actual browser failure by bridging raw Gen I learnset IDs such as `razorleaf` to the battle/UI canonical ID `razor-leaf`. Recommended-set validation and move lookup now use the same canonical registry.
