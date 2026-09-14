@@ -21,7 +21,7 @@ const STATUS_MOVES={
  recover:{heal:50},'soft-boiled':{heal:50},rest:{heal:100,status:'sleep'},
  'swords-dance':{boost:'atk',amount:2},growth:{boost:'spc',amount:1},amnesia:{boost:'spc',amount:2},agility:{boost:'spe',amount:2},harden:{boost:'def',amount:1},withdraw:{boost:'def',amount:1},'defense-curl':{boost:'def',amount:1},meditate:{boost:'atk',amount:1},sharpen:{boost:'atk',amount:1},'acid-armor':{boost:'def',amount:2},barrier:{boost:'def',amount:2},
  leer:{boost:'foeDef',amount:-1},'tail-whip':{boost:'foeDef',amount:-1},growl:{boost:'foeAtk',amount:-1},'string-shot':{boost:'foeSpe',amount:-1},'sand-attack':{boost:'foeAcc',amount:-1},'smoke-screen':{boost:'foeAcc',amount:-1},kinesis:{boost:'foeAcc',amount:-1},flash:{boost:'foeAcc',amount:-1},screech:{boost:'foeDef',amount:-2},'double-team':{boost:'evasion',amount:1},minimize:{boost:'evasion',amount:1},
- smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},thunder:{status:'par',chance:10},thunderbolt:{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},'fire-blast':{status:'burn',chance:30},ember:{status:'burn',chance:10},'rock-slide':{},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.33},'submission':{recoil:.25},'struggle':{recoil:.25},
+ smog:{status:'poison',chance:40},sludge:{status:'poison',chance:30},'body-slam':{status:'par',chance:30},'lick':{status:'par',chance:30},thunder:{status:'par',chance:10},thunderbolt:{status:'par',chance:10},'ice-beam':{status:'freeze',chance:10},blizzard:{status:'freeze',chance:10},'flamethrower':{status:'burn',chance:10},'fire-blast':{status:'burn',chance:30},ember:{status:'burn',chance:10},'rock-slide':{},'bite':{flinch:10},'stomp':{flinch:30},'headbutt':{flinch:30},'slash':{crit:true},'razor-leaf':{crit:true},'karate-chop':{crit:true},'crabhammer':{crit:true},'high-jump-kick':{recoil:1},'jump-kick':{recoil:1},'take-down':{recoil:.25},'double-edge':{recoil:.25},'submission':{recoil:.25},'struggle':{recoil:.5},
  'leech-seed':{volatile:'leech-seed'},substitute:{volatile:'substitute'},reflect:{volatile:'reflect'},'light-screen':{volatile:'light-screen'},haze:{volatile:'haze'},disable:{volatile:'disable'},counter:{special:'counter'},bide:{special:'bide'},'rage':{volatile:'rage'},'focus-energy':{volatile:'focus-energy'},'mist':{volatile:'mist'},'roar':{forceSwitch:true},whirlwind:{forceSwitch:true},'self-destruct':{selfdestruct:true},explosion:{selfdestruct:true},'hyper-beam':{recharge:true},'fire-spin':{volatile:'trap'},'wrap':{volatile:'trap'},bind:{volatile:'trap'},clamp:{volatile:'trap'},'vice-grip':{volatile:'trap'},'razor-wind':{charge:true},dig:{charge:true},fly:{charge:true},'solar-beam':{charge:true},'skull-bash':{charge:true},'ice-beam':{status:'freeze',chance:10}
 };
 
@@ -71,33 +71,26 @@ async function loadData(){
 async function learnset(mon){
  if(mon.learned)return mon.learned;
  const out=new Set();
- const speciesName=mon.name;
- // canLearn() expects species/move names or IDs. The previous build passed
- // the Species object, causing every lookup to fail and triggering the
- // "fewer than four legal moves" startup error.
- for(const mv of S.gen.moves){
-   const id=mv.id||String(mv.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
-   const name=mv.name||id;
-   if(!id)continue;
-   try{
-     if(await S.gen.learnsets.canLearn(speciesName,name))out.add(id);
-   }catch{}
- }
- // Browser-safe fallback: read the raw Gen I learnset from the Gen I Dex.
- // Red/Blue sources are 1L (level/start) and 1M (TM/HM).
- if(out.size<4){
-   try{
-     const raw=S.dex.species.getLearnsetData(mon.name);
-     const table=raw?.learnset||raw?.data?.learnset||{};
-     for(const [id,sources] of Object.entries(table)){
-       if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(id);
-     }
-   }catch{}
+ const speciesName=mon.displayName;
+ // Browser-authoritative Gen I learnset: one async load per species instead of
+ // 151 x 165 individual legality calls. This avoids startup timeouts and uses
+ // the actual Red/Blue source tags (all sources beginning with "1").
+ try{
+   const raw=await S.dex.getLearnsets(speciesName);
+   const table=raw?.learnset||{};
+   for(const [id,sources] of Object.entries(table)){
+     if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(id);
+   }
+ }catch(err){
+   // Fallback for a partially loaded learnset bundle.
+   for(const mv of S.gen.moves){
+     const id=mv.id||String(mv.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+     const name=mv.name||id;
+     try{if(await S.gen.learnsets.canLearn(speciesName,name))out.add(id);}catch{}
+   }
  }
  mon.learned=[...out].filter(id=>moveData(id)).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
- if(mon.learned.length<4){
-   throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves after both learnset checks. The Gen I learnset data did not load correctly.`);
- }
+ if(mon.learned.length<4)throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves. The Red/Blue learnset bundle did not load correctly.`);
  return mon.learned;
 }
 function moveData(id){const m=S.gen.moves.get(id);if(!m||m.exists===false)return null;const type=GEN1_MOVE_TYPE_OVERRIDES[id]||(m.type||'Normal').toLowerCase();const secondary=m.secondary||null;return{id,name:id,type,category:PHYSICAL.has(type)?'physical':'special',power:m.basePower||0,accuracy:m.accuracy===true?100:(m.accuracy||100),pp:m.pp||1,priority:m.priority||0,multihit:m.multihit||null,drain:m.drain||0,recoil:m.recoil||0,ohko:!!m.ohko,damage:m.damage||null,status:m.status||null,volatileStatus:m.volatileStatus||null,boosts:m.boosts||null,flinch:m.flinch||0,secondary};}
@@ -193,7 +186,7 @@ function buildMon(mon,chosen){
  const st=maxStats(mon);
  const ids=[...new Set(chosen)].slice(0,4);
  const moves=ids.map(moveData).filter(Boolean);
- return{id:mon.id,name:mon.name,displayName:mon.displayName,types:mon.types,baseSpeed:mon.baseStats.spe,max:st,hp:st.hp,status:null,statusTurns:0,boosts:{atk:0,def:0,spe:0,spc:0,acc:0,evasion:0},toxicCounter:0,volatile:{},leechSeed:null,moves,pp:Object.fromEntries(moves.map(x=>[x.id,x.pp]))};
+ return{id:mon.id,name:mon.name,displayName:mon.displayName,types:[...mon.types],baseSpeed:mon.baseStats.spe,max:st,hp:st.hp,status:null,statusTurns:0,boosts:{atk:0,def:0,spe:0,spc:0,acc:0,evasion:0},toxicCounter:0,volatile:{},leechSeed:null,lastHit:null,moves,pp:Object.fromEntries(moves.map(x=>[x.id,x.pp]))};
 }
 function cloneTeam(team){return team.map(x=>({...x,max:{...x.max},boosts:{...x.boosts},moves:x.moves.map(m=>({...m})),pp:{...x.pp}}));}
 function effectiveStat(mon,key){let raw=mon.max[key]||0;if(key==='atk'&&mon.status==='burn')raw=Math.floor(raw/2);if(key==='spe'&&mon.status==='par')raw=Math.floor(raw/4);return Math.max(1,Math.floor(raw*stage(mon.boosts[key]||0)));}
@@ -204,7 +197,9 @@ function onSwitchOut(mon){
  if(mon.status==='toxic'){mon.status='poison';mon.toxicCounter=1;}else mon.toxicCounter=0;
  mon.statusTurns=0;
  mon.volatile={};
+ mon.lastHit=null;
  mon.leechSeed=null;
+ mon.volatile.trapMove=null;
 }
 function onSwitchIn(mon){mon.volatile=mon.volatile||{};}
 
@@ -257,6 +252,16 @@ function damage(att,def,mv){
 function canAct(mon,log){
  if(mon.volatile?.recharge){mon.volatile.recharge=false;log(`${mon.displayName} must recharge.`);return false;}
  if(mon.volatile?.flinch){mon.volatile.flinch=false;log(`${mon.displayName} flinched.`);return false;}
+ if(mon.volatile?.disabled){
+   mon.volatile.disabled.turns--;
+   if(mon.volatile.disabled.turns>0){log(`${mon.displayName} is disabled from using ${moveLabel(mon.volatile.disabled.moveId)}.`);return false;}
+   delete mon.volatile.disabled;
+ }
+ if(mon.volatile?.trapped){
+   mon.volatile.trapped.turns--;
+   if(mon.volatile.trapped.turns>0){log(`${mon.displayName} is trapped and cannot move.`);return false;}
+   delete mon.volatile.trapped;
+ }
  if(mon.status==='sleep'){
    if(mon.statusTurns>0){mon.statusTurns--;log(`${mon.displayName} is asleep.`);return false;}
    mon.status=null;log(`${mon.displayName} woke up!`);return false;
@@ -286,9 +291,43 @@ function endTurn(mon,log,seedTarget=null){
 function resolveMove(att,def,mv,log){
  if(!mv||att.hp<=0)return{used:false,damage:0};
  if(!canAct(att,log))return{used:false,damage:0};
+ if(att.volatile?.disabled?.moveId===mv.id){log(`${att.displayName} is disabled from using ${moveLabel(mv.id)}.`);return{used:false,damage:0};}
  if(att.pp[mv.id]<=0){log(`${moveLabel(mv.id)} has no PP!`);return{used:false,damage:0};}
  att.pp[mv.id]--;
  const spec=STATUS_MOVES[mv.id]||{};
+ // Clean implementations for the classic Gen I utility moves. These avoid
+ // cartridge memory/desync quirks while keeping the move intuitive.
+ if(mv.id==='counter'){
+   const h=att.lastHit;
+   if(!h||!['normal','fighting'].includes(h.type)||h.damage<=0){log(`${att.displayName} used Counter — it failed!`);return{used:true,damage:0};}
+   const dealt=Math.min(def.hp,h.damage*2);def.hp=Math.max(0,def.hp-dealt);log(`${att.displayName} countered for ${dealt} damage.`);return{used:true,damage:dealt};
+ }
+ if(mv.id==='conversion'){
+   att.types=[...def.types];log(`${att.displayName} changed its type.`);return{used:true,damage:0};
+ }
+ if(mv.id==='transform'){
+   att.types=[...def.types];att.max={...def.max};att.baseSpeed=def.baseSpeed;att.moves=def.moves.map(x=>({...x}));att.pp=Object.fromEntries(att.moves.map(x=>[x.id,5]));log(`${att.displayName} transformed into ${def.displayName}.`);return{used:true,damage:0};
+ }
+ if(mv.id==='disable'){
+   const candidates=def.moves.filter(x=>def.pp[x.id]>0);
+   if(!candidates.length){log(`${att.displayName}'s Disable failed.`);return{used:true,damage:0};}
+   const target=candidates[randomInt(candidates.length)];def.volatile.disabled={moveId:target.id,turns:1+randomInt(7)};log(`${def.displayName}'s ${moveLabel(target.id)} was disabled.`);return{used:true,damage:0};
+ }
+ if(mv.id==='mimic'){
+   const candidates=def.moves.filter(x=>x.id!=='mimic');
+   if(!candidates.length){log(`${att.displayName}'s Mimic failed.`);return{used:true,damage:0};}
+   const target=candidates[randomInt(candidates.length)];att.moves=att.moves.map(x=>x.id==='mimic'?{...target,id:target.id}:x);att.pp[target.id]=5;log(`${att.displayName} copied ${moveLabel(target.id)}.`);return{used:true,damage:0};
+ }
+ if(mv.id==='psywave'){
+   if(typeMult(mv,def)===0){log('It had no effect.');return{used:true,damage:0};}
+   const dealt=Math.min(def.hp,1+randomInt(Math.max(1,Math.floor(LEVEL*1.5)-1)));def.hp-=dealt;log(`${att.displayName} dealt ${dealt} Psywave damage.`);return{used:true,damage:dealt};
+ }
+ if(mv.id==='metronome'){
+   const pool=[...S.gen.moves].filter(x=>x.id!=='metronome').map(x=>moveData(x.id)).filter(Boolean);
+   if(!pool.length){log(`${att.displayName}'s Metronome failed.`);return{used:true,damage:0};}
+   const chosen=pool[randomInt(pool.length)];log(`${att.displayName}'s Metronome chose ${moveLabel(chosen.id)}.`);att.pp[chosen.id]=Math.max(att.pp[chosen.id]||0,1);return resolveMove(att,def,chosen,log);
+ }
+
  // Clean, deterministic versions of awkward Gen I moves: no cartridge desync/lock bugs.
  if(mv.id==='bide'){
    if(!att.volatile.bide){att.volatile.bide={turns:2,damage:0};log(`${att.displayName} began Bide.`);return{used:true,damage:0};}
@@ -298,7 +337,11 @@ function resolveMove(att,def,mv,log){
    def.hp=Math.max(0,def.hp-dealt);att.volatile.bide=null;log(`${att.displayName} unleashed Bide for ${dealt} damage.`);return{used:true,damage:dealt};
  }
  const acc=mv.ohko?100:clamp(mv.accuracy*accuracyMultiplier(att,def),1,100);
- if(mv.id!=='swift'&&!mv.ohko&&Math.random()*100>=acc){log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);return{used:true,damage:0,miss:true};}
+ if(mv.id!=='swift'&&!mv.ohko&&Math.random()*100>=acc){
+   if(mv.id==='high-jump-kick'||mv.id==='jump-kick'){att.hp=Math.max(0,att.hp-1);log(`${att.displayName}'s ${moveLabel(mv.id)} missed and caused 1 crash damage.`);}
+   else log(`${att.displayName} used ${moveLabel(mv.id)} — missed!`);
+   return{used:true,damage:0,miss:true};
+ }
  // Direct status / utility effects occur after the move's accuracy check.
  if(spec.heal){const healed=Math.min(att.max.hp-att.hp,Math.floor(att.max.hp*(spec.heal/100)));if(healed>0){att.hp+=healed;log(`${att.displayName} recovered ${healed} HP.`);}}
  if(mv.id==='rest'){
@@ -348,21 +391,36 @@ function resolveMove(att,def,mv,log){
    else {dealt=Math.min(def.hp,r.dmg);def.hp=Math.max(0,def.hp-dealt);}
    if(def.volatile?.bide)def.volatile.bide.damage=(def.volatile.bide.damage||0)+dealt;
    total+=dealt;
+   if(dealt>0)def.lastHit={damage:dealt,type:mv.type};
    if(r.crit)log(`${att.displayName} landed a CRITICAL HIT!`);
    if(r.e===0)log('It had no effect.');else if(r.e>1)log('It was super effective!');else if(r.e<1)log('It was not very effective.');
    if(dealt)log(`${att.displayName} dealt ${dealt} damage with ${moveLabel(mv.id)}.`);
    if(brokeSub)break;
  }
  if(mv.id==='rage'&&total>0){att.boosts.atk=clamp((att.boosts.atk||0)+1,-6,6);log(`${att.displayName}'s Rage raised its Attack.`);}
+ if(spec.volatile==='trap'&&total>0&&def.hp>0&&!brokeSub){def.volatile.trapped={turns:2+randomInt(4),source:att.id};att.volatile.trapMove=mv.id;log(`${def.displayName} is trapped by ${moveLabel(mv.id)}.`);}
  // Gen I secondary effects happen after damage and do not occur when the target faints.
  if(def.hp>0&&!def.volatile.substitute){
    const secondaryList=Array.isArray(mv.secondary)?mv.secondary:(mv.secondary?[mv.secondary]:[]);
-   for(const sec of secondaryList){if(!sec)continue;const chance=sec.chance??100;if(Math.random()*100>chance)continue;if(sec.status&&applyStatus(def,sec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} was afflicted with ${sec.status}.`);if(sec.volatileStatus==='flinch'&&def.hp>0)def.volatile.flinch=true;if(sec.boosts){for(const [key,val] of Object.entries(sec.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}}
-   if(spec.status&&Math.random()*100<=(spec.chance??100)&&applyStatus(def,spec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} is ${spec.status}!`);
-   if(spec.flinch&&Math.random()*100<spec.flinch)def.volatile.flinch=true;
+   for(const sec of secondaryList){
+     if(!sec)continue;
+     const chance=sec.chance??100;
+     if(Math.random()*100>=chance)continue;
+     if(sec.status&&applyStatus(def,sec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} was afflicted with ${sec.status}.`);
+     if(sec.volatileStatus==='flinch'&&def.hp>0)def.volatile.flinch=true;
+     if(sec.boosts){for(const [key,val] of Object.entries(sec.boosts)){const target=key.startsWith('-')?def:att;const stat=key.replace(/^-/,'');target.boosts[stat]=clamp((target.boosts[stat]||0)+val,-6,6);}}
+   }
+   // Only use the manual table when the data layer has no secondary effect.
+   // This prevents Body Slam/Thunderbolt/Fire Blast/etc. from applying twice.
+   if(!secondaryList.length){
+     if(spec.status&&Math.random()*100<=(spec.chance??100)&&applyStatus(def,spec.status,{secondary:true,moveType:mv.type}))log(`${def.displayName} is ${spec.status}!`);
+     if(spec.flinch&&Math.random()*100<spec.flinch)def.volatile.flinch=true;
+   }
  }
- if(spec.drain&&total&&!brokeSub)att.hp=Math.min(att.max.hp,att.hp+Math.max(1,Math.floor(total*spec.drain)));
- if(spec.recoil&&total&&!brokeSub)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(total*spec.recoil)));
+ const drain=mv.drain||spec.drain||0;
+ const recoil=mv.recoil||spec.recoil||0;
+ if(drain&&total&&!brokeSub)att.hp=Math.min(att.max.hp,att.hp+Math.max(1,Math.floor(total*drain)));
+ if(recoil&&total&&!brokeSub)att.hp=Math.max(0,att.hp-Math.max(1,Math.floor(total*recoil)));
  if(spec.recharge&&def.hp>0&&!brokeSub)att.volatile.recharge=true;
  if(spec.selfdestruct&&!(brokeSub)){att.hp=0;log(`${att.displayName} fainted from the explosion.`);}
  return{used:true,damage:total,forceSwitch:false};
@@ -395,7 +453,12 @@ function resolveLocalAction(action){
  }
  // In RBY, if a Pokémon faints, the turn ends immediately and residual effects are skipped.
  finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);
- if(!b.over){endTurn(a,b.log.push.bind(b.log),d);endTurn(d,b.log.push.bind(b.log),a);finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);}
+ if(!b.over){
+   const endMy=active('my'),endFoe=active('foe');
+   endTurn(endMy,b.log.push.bind(b.log),endFoe);
+   if(endMy.hp>0&&endFoe.hp>0)endTurn(endFoe,b.log.push.bind(b.log),endMy);
+   finishFaint(b,'my',b.log);if(!b.over)finishFaint(b,'foe',b.log);
+ }
  b.turn++;render();
 }
 function doTurn(idx){resolveLocalAction({type:'move',index:idx});}
@@ -404,7 +467,7 @@ function manualSwitch(index){resolveLocalAction({type:'switch',index});}
 function active(side){return side==='my'?S.battle.my[S.battle.mi]:S.battle.foe[S.battle.fi];}
 function startLocal(){if(S.team.length!==6){alert('Choose six Pokémon first.');return;}for(const id of S.team){const c=(S.moves.get(id)||[]).filter(x=>moveData(x));if(c.length!==4){alert(`${S.byId.get(id).displayName} needs exactly four valid Gen I moves.`);return;}}const foePool=S.mons.filter(m=>!S.team.includes(m.id)),foe=[];while(foe.length<6){const m=foePool[randomInt(foePool.length)];if(!foe.some(x=>x.id===m.id)){const moves=recommendedMoves(m);foe.push(buildMon(m,moves));}}S.battle={mode:'local',my:S.team.map(id=>buildMon(S.byId.get(id),S.moves.get(id))),foe,mi:0,fi:0,turn:1,log:['Battle started!'],over:false,waitingSwitch:false};nav('battle');}
 
-function serializeMon(m){return{id:m.id,hp:m.hp,status:m.status,statusTurns:m.statusTurns,toxicCounter:m.toxicCounter||0,boosts:m.boosts,volatile:m.volatile||{},leechSeed:!!m.leechSeed,pp:m.pp,max:m.max,moves:m.moves.map(x=>x.id)};}
+function serializeMon(m){return{id:m.id,hp:m.hp,status:m.status,statusTurns:m.statusTurns,toxicCounter:m.toxicCounter||0,boosts:m.boosts,volatile:m.volatile||{},leechSeed:!!m.leechSeed,lastHit:m.lastHit||null,pp:m.pp,max:m.max,moves:m.moves.map(x=>x.id),types:m.types};}
 function hydrateBattleTeam(arr){return(arr||[]).map(x=>{const base=S.byId.get(x.id);const m=buildMon(base,x.moves||[]);m.hp=x.hp??m.hp;m.status=x.status??null;m.statusTurns=x.statusTurns??0;m.boosts={...m.boosts,...(x.boosts||{})};m.toxicCounter=x.toxicCounter||0;m.volatile={...(x.volatile||{})};m.pp={...m.pp,...(x.pp||{})};return m;});}
 function makeTeamPayload(){return S.team.map(id=>({id,moves:S.moves.get(id)}));}
 function hydrateChosenTeam(payload){return(payload||[]).map(x=>buildMon(S.byId.get(x.id),x.moves||[]));}
@@ -435,10 +498,13 @@ async function maybeResolveOnline(roomId){
  const applySwitch=(team,idx,action,label)=>{if(action.type!=='switch')return idx;if(!legalSwitch(team,action.index,idx))return idx;onSwitchOut(team[idx]);onSwitchIn(team[action.index]);log.push(`${label} switched to ${team[action.index].displayName}.`);return action.index;};
  const hostAction=byRole.host,guestAction=byRole.guest;
  if(hostForced||guestForced){
+   // A faint forces a replacement and ends the previous turn. No free attack is
+   // granted during the replacement step; the next turn starts after both sides
+   // have live active Pokémon.
    if(hostForced)hi=applySwitch(host,hi,hostAction,'Player 1');
    if(guestForced)gi=applySwitch(guest,gi,guestAction,'Player 2');
    if(host[hi].hp<=0||guest[gi].hp<=0){await o.sb.from('pvp_actions').delete().eq('room_id',roomId).eq('turn',st.turn);return;}
-   if(!hostForced&&!guestForced){} else if(hostForced&&!guestForced){const mv=guest[gi].moves[guestAction.index];if(guestAction.type==='move')resolveMove(guest[gi],host[hi],mv,log.push.bind(log));} else if(guestForced&&!hostForced){const mv=host[hi].moves[hostAction.index];if(hostAction.type==='move')resolveMove(host[hi],guest[gi],mv,log.push.bind(log));}
+   st.turn+=1;
  }else{
    const hostSwitch=hostAction.type==='switch',guestSwitch=guestAction.type==='switch';
    if(hostSwitch||guestSwitch){
@@ -463,7 +529,7 @@ async function maybeResolveOnline(roomId){
    endTurn(guest[gi],log.push.bind(log),host[hi]);
  }
  let result=null;if(host.every(x=>x.hp<=0))result='guest';else if(guest.every(x=>x.hp<=0))result='host';
- const next={...st,turn:st.turn+1,result,hostIndex:hi,guestIndex:gi,hostBattle:host.map(serializeMon),guestBattle:guest.map(serializeMon),log};
+ const next={...st,turn:hostForced||guestForced?st.turn:st.turn+1,result,hostIndex:hi,guestIndex:gi,hostBattle:host.map(serializeMon),guestBattle:guest.map(serializeMon),log};
  const {error:ue}=await o.sb.from('pvp_rooms').update({battle_state:next,status:result?'finished':'battle'}).eq('id',roomId);if(ue)throw ue;
  await o.sb.from('pvp_actions').delete().eq('room_id',roomId).eq('turn',st.turn);
 }

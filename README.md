@@ -61,3 +61,12 @@ V9 battle hardening pass:
 
 ## Clean Rules (V9)
 This is a Gen-I-data battler, not a cartridge-glitch emulator. It uses the 151 original Kanto species, Red/Blue-legal moves, Gen-I base stats and the Gen-I type-based physical/special split. Battle rules intentionally omit cartridge glitches: no 1/256 accuracy miss, no Focus Energy bug, no stat reapplication/overflow glitches, and no link-battle desync mechanics. Ghost and Psychic are mutually super-effective by project rule.
+
+
+V10 hotfix: corrected Gen I learnset validation to use the documented @pkmn/data species-name API and the authoritative @pkmn/dex getLearnsets browser API. This fixes false illegal-move errors such as Venusaur/Razor Leaf.
+
+
+V11 diagnostics/fixes: one raw Gen I learnset load per species, no duplicated secondary effects, corrected RBY recoil/crash behavior, correct end-of-turn active references after switching, and forced online replacements no longer grant a free attack.
+
+
+V12 adds clean implementations for Counter, Conversion, Transform, Disable, Mimic, Psywave, Metronome, and partial trapping; tracks last-hit data for Counter; prevents disabled moves; and records state cleanly across switches.
