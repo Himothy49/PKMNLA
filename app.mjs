@@ -87,31 +87,30 @@ async function learnset(mon){
  const speciesName=mon.displayName;
  try{
    const raw=await S.dex.getLearnsets(speciesName);
-   const table=raw?.learnset||{};
+   const table=raw?.learnset || raw?.data?.learnset || raw || {};
    for(const [id,sources] of Object.entries(table)){
-     if(Array.isArray(sources)&&sources.some(src=>String(src).startsWith('1')))out.add(canonicalMoveId(id));
+     if(Array.isArray(sources) && sources.some(src=>String(src).startsWith('1'))){
+       const cid=canonicalMoveId(id);
+       if(S.moveRecords.has(cid))out.add(cid);
+     }
    }
- }catch{}
-
- // IMPORTANT: getLearnsets() can return a successfully loaded record whose
- // shape/source tags are not the Gen I view we need. Never trust that result
- // alone. Use the documented generation-aware canLearn() check to repair
- // missing Gen I moves and, when necessary, build the pool from it.
- const recommended=RECOMMENDED[mon.id]||[];
- const mustCheck=new Set();
- for(const id of recommended){const cid=canonicalMoveId(id);if(!out.has(cid))mustCheck.add(cid);}
- if(out.size<4){
-   for(const mv of S.gen.moves)mustCheck.add(canonicalMoveId(mv.id||mv.name));
+ }catch(err){
+   console.warn('Gen I learnset fetch failed for', speciesName, err);
  }
- if(mustCheck.size){
-   for(const cid of mustCheck){
-     const mv=S.moveRecords.get(cid); if(!mv)continue;
-     const name=mv.name||cid;
-     try{if(await S.gen.learnsets.canLearn(speciesName,name))out.add(cid);}catch{}
+ // Repair a missing/oddly-shaped learnset by asking the generation-aware API.
+ // Only the missing moves are checked so startup stays small and deterministic.
+ if(out.size<4 || (RECOMMENDED[mon.id]||[]).some(id=>!out.has(canonicalMoveId(id)))){
+   for(const mv of S.gen.moves){
+     const cid=canonicalMoveId(mv.id||mv.name);
+     if(out.has(cid))continue;
+     try{
+       if(await S.gen.learnsets.canLearn(speciesName, mv.name||cid))out.add(cid);
+     }catch{}
+     if(out.size>=4 && (RECOMMENDED[mon.id]||[]).every(id=>out.has(canonicalMoveId(id))))break;
    }
  }
  mon.learned=[...out].filter(id=>moveData(id)).sort((a,b)=>moveLabel(a).localeCompare(moveLabel(b)));
- if(mon.learned.length<4)throw Error(`${mon.displayName} has ${mon.learned.length} legal Gen I moves after both learnset sources were checked.`);
+ if(mon.learned.length<4)throw Error(`${mon.displayName} has only ${mon.learned.length} verified Red/Blue moves. The Gen I learnset data did not load completely.`);
  return mon.learned;
 }
 function moveData(id){
@@ -202,6 +201,34 @@ function home(){app.innerHTML=`<section class="hero"><div class="brand">GEN I CL
 function teamPage(){const list=filtered(),p=S.selected?S.byId.get(S.selected):null;app.innerHTML=`<section class="panel"><div class="row"><div><div class="brand">TEAM BUILDER</div><h2 style="margin:.2rem 0">Build your six</h2></div><div class="spacer"></div><span class="pill">${S.team.length}/6 Pokémon</span><button class="btn primary" id="start" ${S.team.length!==6?'disabled':''}>START LOCAL</button><button class="btn" id="create" ${S.team.length!==6?'disabled':''}>CREATE ONLINE ROOM</button></div><div class="team">${S.team.map((id,i)=>{const m=S.byId.get(id);return`<div class="slot"><span>${i+1}</span><img src="${m.sprite}"><b>${esc(m.displayName)}</b><button class="btn" data-remove="${id}">×</button></div>`;}).join('')}</div><div class="controls"><input class="input" id="search" placeholder="Search Pokémon…" value="${esc(S.search)}"><select class="select" id="filter"><option value="">All types</option>${TYPE_ORDER.map(t=>`<option ${S.type===t?'selected':''} value="${t}">${cap(t)}</option>`).join('')}</select><select class="select" id="sort"><option value="id" ${S.sort==='id'?'selected':''}>Pokédex order</option><option value="hp" ${S.sort==='hp'?'selected':''}>HP</option><option value="atk" ${S.sort==='atk'?'selected':''}>Attack</option><option value="def" ${S.sort==='def'?'selected':''}>Defense</option><option value="spc" ${S.sort==='spc'?'selected':''}>Special</option><option value="spe" ${S.sort==='spe'?'selected':''}>Speed</option></select></div><div class="grid">${list.map(m=>`<button class="dex ${S.selected===m.id?'selected':''}" data-pick="${m.id}"><span class="num">#${String(m.id).padStart(3,'0')}</span><img src="${m.sprite}" alt="${esc(m.displayName)}"><b>${esc(m.displayName)}</b><div>${m.types.map(t=>`<span class="tag">${cap(t)}</span>`).join(' / ')}</div></button>`).join('')}</div>${p?detail(p):''}</section>`;}
 function detail(p){const chosen=S.moves.get(p.id)||[],stats=p.baseStats;return`<div class="detail"><div class="portrait"><img src="${p.art}" alt="${esc(p.displayName)}"><strong>#${String(p.id).padStart(3,'0')} ${esc(p.displayName)}</strong><div>${p.types.map(t=>`<span class="pill">${cap(t)}</span>`).join('')}</div><button class="btn primary" id="add" ${S.team.includes(p.id)||S.team.length>=6?'disabled':''}>${S.team.includes(p.id)?'IN TEAM':'ADD TO TEAM'}</button></div><div><div class="stats"><div class="stat"><b>${stats.hp}</b><span class="muted">HP</span></div><div class="stat"><b>${stats.atk}</b><span class="muted">ATK</span></div><div class="stat"><b>${stats.def}</b><span class="muted">DEF</span></div><div class="stat"><b>${stats.spc}</b><span class="muted">SPC</span></div><div class="stat"><b>${stats.spe}</b><span class="muted">SPE</span></div></div><h3>Red/Blue legal moves <span class="muted small">(${chosen.length}/4 selected)</span></h3><div class="notice small">The highlighted four are recommended legal Gen I moves. You can replace any of them with another move this Pokémon could actually learn in Red/Blue.</div><div class="moves">${legalMoves(p).map(m=>`<div class="move ${chosen.includes(m.id)?'selected':''}" data-move="${m.id}" data-mon="${p.id}"><b>${moveLabel(m.id)}</b><div class="small muted">${cap(m.type)} • ${m.power||'Status'} • ${m.accuracy}% • ${m.pp} PP</div></div>`).join('')}</div></div></div>`;}
 
+function gen1Stat(base, hp=false, level=LEVEL, dv=15, statExp=65535){
+ const sqrtPart=Math.floor(Math.sqrt(Math.max(0,statExp))/4);
+ const inner=(2*base)+dv+sqrtPart;
+ return hp ? Math.floor(inner*level/100)+level+10 : Math.floor(inner*level/100)+5;
+}
+function maxStats(mon){
+ const b=mon.baseStats;
+ return {
+  hp:gen1Stat(b.hp,true),
+  atk:gen1Stat(b.atk),
+  def:gen1Stat(b.def),
+  spc:gen1Stat(b.spc),
+  spe:gen1Stat(b.spe)
+ };
+}
+function legalMoves(mon){
+ return (mon.learned||[]).map(id=>moveData(id)).filter(Boolean);
+}
+async function ensureMoves(mon){
+ await learnset(mon);
+ const rec=recommendedMoves(mon);
+ if(rec.length!==4)throw Error(`${mon.displayName} does not have four verified legal Red/Blue moves.`);
+ S.movePool.set(mon.id, legalMoves(mon));
+ if(!S.moves.has(mon.id) || (S.moves.get(mon.id)||[]).length!==4){
+   S.moves.set(mon.id, rec);
+ }
+ return rec;
+}
 function buildMon(mon,chosen){
  const st=maxStats(mon);
  const ids=[...new Set(chosen)].slice(0,4);
@@ -485,7 +512,7 @@ function doTurn(idx){resolveLocalAction({type:'move',index:idx});}
 function manualSwitch(index){resolveLocalAction({type:'switch',index});}
 
 function active(side){return side==='my'?S.battle.my[S.battle.mi]:S.battle.foe[S.battle.fi];}
-function startLocal(){if(S.team.length!==6){alert('Choose six Pokémon first.');return;}for(const id of S.team){const c=(S.moves.get(id)||[]).filter(x=>moveData(x));if(c.length!==4){alert(`${S.byId.get(id).displayName} needs exactly four valid Gen I moves.`);return;}}const foePool=S.mons.filter(m=>!S.team.includes(m.id)),foe=[];while(foe.length<6){const m=foePool[randomInt(foePool.length)];if(!foe.some(x=>x.id===m.id)){const moves=recommendedMoves(m);foe.push(buildMon(m,moves));}}S.battle={mode:'local',my:S.team.map(id=>buildMon(S.byId.get(id),S.moves.get(id))),foe,mi:0,fi:0,turn:1,log:['Battle started!'],over:false,waitingSwitch:false};nav('battle');}
+function startLocal(){if(S.team.length!==6){alert('Choose six Pokémon first.');return;}for(const id of S.team){const c=(S.moves.get(id)||[]).map(x=>moveData(x)).filter(Boolean);if(c.length!==4){alert(`${S.byId.get(id).displayName} needs exactly four verified Red/Blue moves.`);return;}}const foePool=S.mons.filter(m=>!S.team.includes(m.id)),foe=[];while(foe.length<6){const m=foePool[randomInt(foePool.length)];if(!foe.some(x=>x.id===m.id)){const moves=recommendedMoves(m);foe.push(buildMon(m,moves));}}S.battle={mode:'local',my:S.team.map(id=>buildMon(S.byId.get(id),S.moves.get(id))),foe,mi:0,fi:0,turn:1,log:['Battle started!'],over:false,waitingSwitch:false};nav('battle');}
 
 function serializeMon(m){return{id:m.id,hp:m.hp,status:m.status,statusTurns:m.statusTurns,toxicCounter:m.toxicCounter||0,boosts:m.boosts,volatile:m.volatile||{},leechSeed:!!m.leechSeed,lastHit:m.lastHit||null,pp:m.pp,max:m.max,moves:m.moves.map(x=>x.id),types:m.types};}
 function hydrateBattleTeam(arr){return(arr||[]).map(x=>{const base=S.byId.get(x.id);const m=buildMon(base,x.moves||[]);m.hp=x.hp??m.hp;m.status=x.status??null;m.statusTurns=x.statusTurns??0;m.boosts={...m.boosts,...(x.boosts||{})};m.toxicCounter=x.toxicCounter||0;m.volatile={...(x.volatile||{})};m.pp={...m.pp,...(x.pp||{})};return m;});}

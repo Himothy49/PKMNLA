@@ -1,4 +1,4 @@
-# Kanto PvP — Clean V5
+# Kanto PvP — Clean V15
 
 A static Gen I Kanto 6v6 PvP prototype with a deliberately modernized Ghost/Psychic interaction.
 
@@ -76,3 +76,10 @@ V13: fixed the actual browser failure by bridging raw Gen I learnset IDs such as
 
 
 V14 learnset fix: the browser now uses getLearnsets() as a cache/source, but independently verifies missing recommended moves with the documented Gen I canLearn() API and fills the legal pool from it when the raw source view is incomplete. This prevents false errors such as Venusaur/Razor Leaf while retaining strict legality checks.
+
+
+V15 diagnostics hardening:
+- Restored/implemented missing Gen I stat helpers used at runtime (`maxStats`, `legalMoves`, `ensureMoves`).
+- Learnset loader accepts the documented async getLearnsets record and its direct/raw shape, then repairs missing entries with `Generation#learnsets.canLearn`.
+- Recommended moves are only accepted once they resolve through the same canonical Gen I move registry.
+- Browser startup now fails with a precise learnset error instead of a misleading recommendation error.

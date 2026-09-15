@@ -77,7 +77,7 @@ const trans=mv('transform','normal',0,100,10);counterUser.pp.transform=10;counte
 const dis=mv('disable','normal',0,55,20);counterUser.moves=[dis];counterUser.pp.disable=20;counterTarget.moves=[normal];counterTarget.pp={'body-slam':15};resolveMove(counterUser,counterTarget,dis,()=>{});assert(counterTarget.volatile.disabled,'Disable must create a disabled move state');
 
 Math.random=originalRandom;
-console.log('Kanto PvP V12 runtime battle playtest: PASS');
+console.log('Kanto PvP V15 runtime battle playtest: PASS');
 console.log('Type matrix: PASS');
 console.log('Crit math: PASS');
 console.log('Damage/STAB/effectiveness: PASS');
